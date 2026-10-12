@@ -81,6 +81,20 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 td small{display:block;color:var(--mute);font-size:11px}
+.chart{display:block;overflow-x:auto;padding:6px 0}
+.gl{stroke:var(--line);stroke-width:1}
+.ax{fill:var(--mute);font-size:10px}
+.ax.td{fill:var(--pri);font-weight:700}
+.av{stroke:var(--acc);stroke-width:1.5;stroke-dasharray:4 3}
+.av2{fill:var(--acc)}
+.sv-Jasa{fill:var(--pri)}.sv-Barang{fill:var(--acc)}.sv-PPOB{fill:#3E8574}.sv-Tip{fill:#9a8fb0}
+.stk{transform-box:fill-box;transform-origin:bottom;animation:rise .5s ease}
+@keyframes rise{from{transform:scaleY(0)}}
+.bar{cursor:pointer}
+.bar:hover .stk,.bar.on .stk{filter:brightness(1.12)}
+.bar.on rect[fill=transparent]{fill:color-mix(in srgb,var(--pri) 8%,transparent)}
+.lti{min-height:20px;margin-top:6px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px}
 :root{--chip:#EAE5F1;--sh:0 1px 2px rgba(35,28,48,.06),0 4px 14px rgba(35,28,48,.06);--rad:14px}
 :root[data-theme="dark"]{--chip:#2c2540;--sh:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.25)}
 :root[data-pal="teal"][data-theme="light"]{--pri:#2F6B5E;--acc:#D97D4A}
@@ -176,7 +190,7 @@ main{max-width:1400px;margin:0 auto}
 <div class="lp"><label class="s">Dari <input id="lf" type="date"></label><label class="s">Sampai <input id="lt" type="date"></label></div>
 <div id="lc" class="stat"></div>
 <p class="s">Untung tampil setelah ikon mata di header dibuka.</p>
-<div class="ic"><h4>Omzet harian</h4><div class="lg2"><i class="s-Jasa"></i>Jasa<i class="s-Barang"></i>Barang<i class="s-PPOB"></i>PPOB<i class="s-Tip"></i>Tip</div><div id="lch" class="chart"></div></div>
+<div class="ic"><h4>Omzet harian</h4><div class="lg2"><i class="s-Jasa"></i>Jasa<i class="s-Barang"></i>Barang<i class="s-PPOB"></i>PPOB<i class="s-Tip"></i>Tip</div><div id="lch" class="chart"></div><div id="lti" class="s lti">Ketuk atau arahkan ke batang untuk melihat rincian.</div></div>
 <div class="ic"><h4>Barang terjual per item</h4><div class="lp"><select id="lk"></select><select id="ls"><option value="qty">Terbanyak terjual</option><option value="om">Omzet tertinggi</option><option value="un">Untung tertinggi</option></select></div><div id="ltb"></div></div>
 </div></section>
 <div id="modal"></div>
@@ -466,12 +480,30 @@ function renderLap(){
   $('lc').innerHTML=`<div><span>Omzet</span><b>${fmt(om)}</b></div><div><span>Untung</span><b>${U(un)}</b></div><div><span>Nota</span><b>${nn}</b></div>`;
   const day={};
   rows.forEach(r=>{const k=r.at.toLocaleDateString('en-CA');(day[k]=day[k]||{Jasa:0,Barang:0,PPOB:0,Tip:0})[grp(r.item,r.jenis)]+=r.jual;});
-  const keys=Object.keys(day).sort();let h='';
+  const keys=Object.keys(day).sort();let h='';LDAY=day;
   if(keys.length){
     const list=[];
     for(const d=new Date(keys[0]+'T00:00:00'),e=new Date(keys[keys.length-1]+'T00:00:00');d<=e;d.setDate(d.getDate()+1))list.push(d.toLocaleDateString('en-CA'));
-    const tot=k=>day[k]?G.reduce((x,g)=>x+day[k][g],0):0,mx=Math.max(...list.map(tot),1);
-    h=list.map(k=>{const v=day[k]||{};return`<div class="bc" title="${k}: ${fmt(tot(k))}"><div class="bs">${G.map(g=>v[g]?`<i class="s-${g}" style="height:${(v[g]/mx*100).toFixed(1)}%"></i>`:'').join('')}</div><span>${k.slice(8)}/${k.slice(5,7)}</span></div>`;}).join('');
+    const tot=k=>day[k]?G.reduce((x,g)=>x+day[k][g],0):0,mx0=Math.max(...list.map(tot),1);
+    const p=Math.pow(10,Math.floor(Math.log10(mx0/4))),st=[1,2,2.5,5,10].map(m=>m*p).find(v=>v*4>=mx0),top=st*4;
+    const W0=Math.max(300,($('lch').clientWidth||320)-8),L=50,slot=Math.max(30,Math.floor((W0-L)/list.length)),W=L+slot*list.length+8,H=190,B=22,T=10,ph=H-B-T,bw=Math.min(slot-8,40);
+    const yy=v=>T+ph-v/top*ph,fk=v=>v>=1e6?(v/1e6).toFixed(v%1e6?1:0).replace('.',',')+' jt':v>=1000?Math.round(v/1000)+' rb':String(v);
+    const avg=list.reduce((x,k)=>x+tot(k),0)/list.length,lab=list.length>31?5:list.length>14?2:1,today=new Date().toLocaleDateString('en-CA');
+    let sv=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Omzet harian">`;
+    for(let i=0;i<=4;i++){const y=yy(st*i);sv+=`<line x1="${L}" x2="${W-4}" y1="${y}" y2="${y}" class="gl"/><text x="${L-6}" y="${y+3}" text-anchor="end" class="ax">${i?'Rp'+fk(st*i):'0'}</text>`;}
+    list.forEach((k,i)=>{
+      const x=L+i*slot+(slot-bw)/2,v=day[k]||{},t=tot(k),hh=t/top*ph;let y0=T+ph;
+      sv+=`<g class="bar" data-k="${k}"><rect x="${L+i*slot}" y="${T}" width="${slot}" height="${ph+B}" fill="transparent"/>`;
+      if(t){
+        sv+=`<clipPath id="c${i}"><rect x="${x}" y="${T+ph-hh}" width="${bw}" height="${hh}" rx="4"/></clipPath><g clip-path="url(#c${i})" class="stk">`;
+        G.forEach(g=>{if(v[g]){const sh=v[g]/top*ph;y0-=sh;sv+=`<rect x="${x}" y="${y0}" width="${bw}" height="${sh}" class="sv-${g}"/>`;}});
+        sv+='</g>';
+      }
+      if(i%lab==0)sv+=`<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" class="ax${k==today?' td':''}">${k.slice(8)}/${k.slice(5,7)}</text>`;
+      sv+='</g>';
+    });
+    sv+=`<line x1="${L}" x2="${W-4}" y1="${yy(avg)}" y2="${yy(avg)}" class="av"/><text x="${W-6}" y="${yy(avg)-4}" text-anchor="end" class="ax av2">rata-rata Rp${fk(Math.round(avg))}</text></svg>`;
+    h=sv;
   }
   $('lch').innerHTML=h||'<p class="empty">Belum ada transaksi pada periode ini.</p>';
   const it={};
@@ -483,6 +515,15 @@ function renderLap(){
   $('ltb').innerHTML=L.length?`<table><tr><th>Item</th><th>Terjual</th><th>Omzet</th><th>Untung</th></tr>${L.map(o=>`<tr><td>${esc(o.n)}<small>${esc(o.kat)}</small></td><td>${num(o.q)}</td><td>${num(o.om)}</td><td>${U(o.un)}</td></tr>`).join('')}</table>`:'<p class="empty">Tidak ada data.</p>';
 }
 document.addEventListener('change',e=>{if(['ls','lk','lf','lt'].includes(e.target.id))renderLap();});
+let LDAY={};
+const showBar=e=>{
+  const g=e.target.closest&&e.target.closest('.bar');if(!g)return;
+  const k=g.dataset.k,v=LDAY[k]||{},t=Object.values(v).reduce((x,y)=>x+y,0);
+  document.querySelectorAll('.bar').forEach(x=>x.classList.toggle('on',x==g));
+  $('lti').innerHTML=`<b>${k.slice(8)}/${k.slice(5,7)}/${k.slice(0,4)}</b> · Total ${fmt(t)}`+['Jasa','Barang','PPOB','Tip'].filter(q=>v[q]).map(q=>` · <i class="dot s-${q}"></i>${q} ${fmt(v[q])}`).join('');
+};
+document.addEventListener('mouseover',showBar);
+document.addEventListener('click',showBar);
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
