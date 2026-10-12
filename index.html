@@ -136,7 +136,7 @@ main{max-width:1400px;margin:0 auto}
 <header><div class="hb"><span class="lg">M</span><div><b>MRR Fotokopi, Print &amp; ATK</b> <span id="st" class="st">● Mode uji</span></div></div><div class="hb"><nav><button class="on" data-a="view" data-v="kasir">Kasir</button><button data-a="view" data-v="riwayat">Riwayat</button></nav><span class="hb"><button class="sw" data-a="pal" data-v="plum" style="background:#3A2F63" title="Plum"></button><button class="sw" data-a="pal" data-v="teal" style="background:#3E8574" title="Teal"></button><button class="sw" data-a="pal" data-v="terra" style="background:#D97D4A" title="Terakota"></button><button class="sw" data-a="pal" data-v="ocean" style="background:#1F5FA8" title="Biru"></button><button class="sw" data-a="pal" data-v="rose" style="background:#A5345C" title="Mawar"></button><button class="sw" data-a="pal" data-v="slate" style="background:#3B4A5A" title="Grafit"></button></span><button class="md" id="ey" data-a="eye" title="Tampilkan/sembunyikan untung">🙈</button><button class="md" id="md" data-a="mode" title="Ganti terang/gelap">☾</button></div></header>
 <main>
   <section>
-    <div id="stat" class="stat" title="Ringkasan sesi ini"></div>
+    <div id="stat" class="stat" title="Ringkasan hari ini"></div>
     <div id="tabs"></div>
     <input id="q" placeholder="Cari barang atau layanan...">
     <div id="sec"></div><div id="grid"></div><div id="info"></div>
@@ -152,7 +152,7 @@ main{max-width:1400px;margin:0 auto}
     </div>
   </aside>
 </main>
-<section id="hv" hidden><div class="hw"><h2>Riwayat <small class="s">sesi ini (riwayat dari spreadsheet menyusul)</small></h2><input id="hs" placeholder="Cari nama item..."><div id="hl"></div></div></section>
+<section id="hv" hidden><div class="hw"><h2>Riwayat</h2><select id="hd" style="width:auto;margin:0 8px 8px 0"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option></select><input id="hs" placeholder="Cari nama item..." style="width:min(280px,100%)"><div id="hl"></div></div></section>
 <div id="modal"></div>
 <div id="toast"></div>
 <script>
@@ -176,6 +176,7 @@ let cart=[],active={},uid=0,tab='Jasa',pay={},hist=[],armed=false,tt,nid=0,view=
 const tierP=s=>{const t=TIER.find(x=>s>=x.a&&s<=x.b)||TIER[TIER.length-1];return t.per?t.p*s:t.p;};
 
 function calc(l){
+  if(l.t=='row')return{jual:l.jual,modal:l.modal};
   if(l.t=='item')return{jual:l.p*l.q,modal:l.m*l.q};
   if(l.t=='ppob')return{jual:l.asli+l.admin,modal:l.m};
   const [,tp,sisi,flat,toner]=SVC[l.k];
@@ -226,7 +227,7 @@ function render(){
   $('sec').innerHTML=q?'':`<div class="sc"><b>${SEC[tab][0]}</b><span>${SEC[tab][1]}</span></div>`;
   $('info').innerHTML=q?'':tab=='Jasa'?infoJ():tab=='PPOB'?infoP():'';
   const t=totals();
-  const ok=hist.filter(n=>n.st!='Void'),om=ok.reduce((a,n)=>a+n.total,0),un=ok.reduce((a,n)=>a+n.untung,0);
+  const td=new Date().toDateString(),ok=hist.filter(n=>n.st!='Void'&&n.at.toDateString()==td),om=ok.reduce((a,n)=>a+n.total,0),un=ok.reduce((a,n)=>a+n.untung,0);
   $('stat').innerHTML=`<div><span>Nota</span><b>${ok.length}</b></div><div><span>Omzet</span><b>${fmt(om)}</b></div><div><span>Untung</span><b>${U(un)}</b></div>`;
   $('cn').textContent=cart.length||'';
   $('lines').innerHTML=cart.length?cart.map(lineH).join(''):'<div class="empty"><div class="ei">🧾</div>Keranjang kosong<br><span class="s">Ketuk layanan atau barang untuk menambah.</span></div>';
@@ -254,7 +255,7 @@ function struk(){
     const price=calc(l).jual+(l===last?t.round:0);
     const nm=l.t=='svc'?`${SHORT[l.k]} ${l.q} lembar`:l.t=='item'?(l.q>1?`${l.n} x${l.q}`:l.n):l.n;
     L.push(row(nm,num(price)));
-    if(l.t=='ppob'&&l.cat)L.push(' '+l.cat.slice(0,W-1));
+    if(l.cat&&(l.t=='ppob'||l.t=='row'))L.push(' '+String(l.cat).slice(0,W-1));
   });
   L.push(sep,row('TOTAL',num(t.total)),sep,...wrap(String(P['Teks Penutup Struk']||'Terima kasih').replace(/\.+$/,'')).map(x=>ctr(x)));
   return L.join('\n');
@@ -312,12 +313,12 @@ function strukOf(n,mark){const k=cart,a=SD,b=SM;cart=n.cart;SD=n.at;SM=mark;cons
 function renderHist(){
   const f=hq.trim().toLowerCase();
   const L=[...hist].reverse().filter(n=>!f||n.cart.some(l=>nm(l).toLowerCase().includes(f)));
-  $('hl').innerHTML=L.length?L.map(n=>`<div class="hn${n.st=='Void'?' vd':''}" data-a="nota" data-id="${n.id}"><div class="r"><b>#${n.id} · ${hm(n.at)}</b><b>${fmt(n.total)}</b></div><div class="s">${esc(n.cart.map(nm).join(', '))}</div><div class="s">${n.m}${n.tip?' · tip '+num(n.tip):''}${n.st=='Void'?' · VOID: '+esc(n.why):''}${n.rep?' · diganti nota #'+n.rep:''}</div></div>`).join(''):'<p class="empty">Belum ada nota. Simpan transaksi dari layar Kasir.</p>';
+  $('hl').innerHTML=L.length?L.map(n=>`<div class="hn${n.st=='Void'?' vd':''}" data-a="nota" data-id="${n.id}"><div class="r"><b>${n.sid||'#'+n.id} · ${hm(n.at)}</b><b>${fmt(n.total)}</b></div><div class="s">${esc(n.cart.map(nm).join(', '))}</div><div class="s">${n.m}${n.tip?' · tip '+num(n.tip):''}${n.st=='Void'?' · VOID: '+esc(n.why):''}${n.rep?' · diganti nota #'+n.rep:''}</div></div>`).join(''):'<p class="empty">Belum ada nota. Simpan transaksi dari layar Kasir.</p>';
 }
 function setView(v){
   view=v;document.querySelector('main').hidden=v!='kasir';$('hv').hidden=v!='riwayat';
   document.querySelectorAll('header nav button').forEach(x=>x.classList.toggle('on',x.dataset.v==v));
-  if(v=='riwayat')renderHist();else render();
+  if(v=='riwayat'){renderHist();loadHist();}else render();
 }
 
 let PIN='';
@@ -351,7 +352,7 @@ async function loadAll(){
   try{
     applyData(await api('load'));
     try{sessionStorage.setItem('mrr-pin',PIN);}catch(e){}
-    closeM();setSt('● Terhubung');render();
+    closeM();setSt('● Terhubung');render();loadHist();
   }catch(e){
     try{sessionStorage.removeItem('mrr-pin');}catch(x){}
     PIN='';setSt('● Belum masuk');pinScreen(e.message);
@@ -375,9 +376,47 @@ async function save(){
   if(t.round)rows.push({jenis:'Pembulatan',nama:'Pembulatan',qty:1,jual:t.round,modal:0});
   if(tip)rows.push({jenis:'Tip',nama:'Tip',qty:1,jual:tip,modal:0});
   $('sv').disabled=true;setSt('Menyimpan…');
-  try{await api('save',{nota:{metode:pay.m,rows}});saveLocal();}
+  try{await api('save',{nota:{metode:pay.m,rows,replaces:fix}});saveLocal();loadHist();}
   catch(e){setSt('⚠ Gagal menyimpan');toast('Gagal menyimpan: '+e.message);$('sv').disabled=false;}
 }
+let HD=7;
+function rowsToNotas(rows){
+  const m={},order=[];
+  rows.forEach(r=>{
+    const sid=String(r[0]),jual=Number(r[7])||0;
+    if(!m[sid]){m[sid]={sid,at:new Date(r[1]),total:0,untung:0,tip:0,m:r[10],st:r[12],cart:[],rows:[]};order.push(sid);}
+    const n=m[sid];n.total+=jual;n.untung+=Number(r[9])||0;n.rows.push(r);
+    if(r[2]=='Tip'){n.tip+=jual;}
+    else if(r[2]=='Pembulatan'){
+      const k=[...n.cart].reverse().find(l=>String(l.idi).indexOf('JSA')==0)||n.cart[n.cart.length-1];
+      if(k)k.jual+=jual;
+    }else{
+      const q=Number(r[6])||1,idi=String(r[3]);
+      const nama=(q>1&&idi.indexOf('JSA')!=0&&idi.indexOf('PPB')!=0)?`${r[4]} x${q}`:r[4];
+      n.cart.push({t:'row',idi,n:nama,jual,modal:Number(r[8])||0,q,cat:r[13]});
+    }
+  });
+  return order.map(k=>m[k]).reverse().map((n,i)=>{n.id=i+1;return n;});
+}
+async function loadHist(){
+  try{hist=rowsToNotas(await api('history',{days:HD}));}
+  catch(e){toast('Gagal memuat riwayat: '+e.message);}
+  if(view=='riwayat')renderHist();else render();
+}
+const JREV=Object.fromEntries(Object.entries(JSA).map(([k,v])=>[v,k]));
+const KREV={'KRT-001':'A4','KRT-002':'F4','TANPA':'TANPA'};
+function restoreCart(n){
+  const out=[];
+  n.rows.forEach(r=>{
+    if(r[2]!='Item')return;
+    const id=String(r[3]),q=Number(r[6])||1,jual=Number(r[7])||0,modal=Number(r[8])||0;
+    if(JREV[id])out.push({id:++uid,t:'svc',k:JREV[id],q,kr:KREV[r[14]]||'A4',lb:r[5]||''});
+    else if(id.indexOf('PPB')==0){const i=PPOBID.indexOf(id),ad=i>=0?PPOB[i][1]:0;out.push({id:++uid,t:'ppob',ty:id,n:r[4],asli:jual-ad,admin:ad,m:modal,pf:r[11]||'Mitra Shopee',cat:r[13]||''});}
+    else{const d=ITEMS.find(x=>x[0]==id);out.push(d?{id:++uid,t:'item',i:id,n:d[1],p:d[3],m:d[4],q}:{id:++uid,t:'item',i:id,n:r[4],p:jual/q,m:modal/q,q});}
+  });
+  return out;
+}
+document.addEventListener('change',e=>{if(e.target.id==='hd'){HD=+e.target.value;loadHist();}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
@@ -393,17 +432,21 @@ document.addEventListener('click',e=>{
     case'pal':TH.pal=b.dataset.v;applyTheme();break;
     case'nota':{
       const n=hist.find(x=>x.id==id);if(!n)break;
-      M(`<h3>Nota #${n.id}${n.st=='Void'?' · VOID':''}</h3><div class="s">${hm(n.at)} · ${n.m}${n.tip?' · tip '+num(n.tip):''}</div><pre>${esc(strukOf(n,true))}</pre>`+(n.st=='Void'?`<div class="s">Alasan: ${esc(n.why)}${n.note?' — '+esc(n.note):''}</div><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`:`<div class="btns"><button data-a="copyn" data-id="${n.id}">Salin struk</button><button data-a="voidf" data-id="${n.id}">Void</button><button class="pri" data-a="close">Tutup</button></div>`));
+      M(`<h3>Nota ${n.sid||'#'+n.id}${n.st=='Void'?' · VOID':''}</h3><div class="s">${hm(n.at)} · ${n.m}${n.tip?' · tip '+num(n.tip):''}</div><pre>${esc(strukOf(n,true))}</pre>`+(n.st=='Void'?`<div class="s">Alasan: ${esc(n.why)}${n.note?' — '+esc(n.note):''}</div><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`:`<div class="btns"><button data-a="copyn" data-id="${n.id}">Salin struk</button><button data-a="voidf" data-id="${n.id}">Void</button><button class="pri" data-a="close">Tutup</button></div>`));
       break;
     }
     case'copyn':{const n=hist.find(x=>x.id==id);try{navigator.clipboard.writeText(strukOf(n,true));toast('Teks struk disalin.');}catch(x){toast('Salin tidak didukung di sini.');}break;}
-    case'voidf':M(`<h3>Void nota #${id}</h3><label>Alasan</label><select id="vr"><option>Salah Input</option><option>Salah Harga</option><option>Pelanggan Batal</option><option>Lainnya</option></select><label>Catatan</label><input id="vn"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input id="vp" type="checkbox" style="width:auto" checked>Buat nota pengganti</label><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="dovoid" data-id="${id}">Void nota</button></div>`);break;
+    case'voidf':M(`<h3>Void nota ${(hist.find(x=>x.id==id)||{}).sid||'#'+id}</h3><label>Alasan</label><select id="vr"><option>Salah Input</option><option>Salah Harga</option><option>Pelanggan Batal</option><option>Lainnya</option></select><label>Catatan</label><input id="vn"><label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input id="vp" type="checkbox" style="width:auto" checked>Buat nota pengganti</label><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="dovoid" data-id="${id}">Void nota</button></div>`);break;
     case'dovoid':{
       const n=hist.find(x=>x.id==id);if(!n)break;
-      n.st='Void';n.why=$('vr').value;n.note=$('vn').value.trim();n.vat=new Date();
-      const rep=$('vp').checked;closeM();
-      if(rep){cart=JSON.parse(JSON.stringify(n.cart));active={};fix=n.id;setView('kasir');toast(`Nota #${n.id} di-void. Perbaiki keranjang, lalu simpan sebagai nota pengganti.`);}
-      else{renderHist();toast(`Nota #${n.id} di-void dan keluar dari laporan.`);}
+      const why=$('vr').value,note=$('vn').value.trim(),rp=$('vp').checked;
+      b.disabled=true;
+      api('void',{id:n.sid,why,note}).then(()=>{
+        closeM();n.st='Void';
+        if(rp){cart=restoreCart(n);active={};fix=n.sid;setView('kasir');toast(`Nota ${n.sid} di-void. Perbaiki keranjang, lalu simpan sebagai nota pengganti.`);}
+        else{renderHist();toast(`Nota ${n.sid} di-void dan keluar dari laporan.`);}
+        loadHist();
+      }).catch(e=>{b.disabled=false;toast('Gagal void: '+e.message);});
       break;
     }
     case'tab':tab=b.dataset.v;$('q').value='';render();break;
