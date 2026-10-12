@@ -547,10 +547,19 @@ function printStruk(t){
     $('pp').textContent=t;window.print();
   }
 }
-function shareStruk(t){
+const isMobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
+async function copyTxt(x){
+  try{await navigator.clipboard.writeText(x);return true;}
+  catch(e){
+    try{const a=document.createElement('textarea');a.value=x;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();return ok;}
+    catch(e2){return false;}
+  }
+}
+async function shareStruk(t){
   const x='```\n'+t+'\n```';
-  if(navigator.share)navigator.share({text:x}).catch(()=>{});
-  else window.open('https://wa.me/?text='+encodeURIComponent(x),'_blank');
+  if(isMobile&&navigator.share){navigator.share({text:x}).catch(()=>{});return;}
+  const ok=await copyTxt(x);
+  toast(ok?'Struk disalin. Tempel (Ctrl+V) di chat WhatsApp.':'Gagal menyalin struk.',ok?['Buka WhatsApp Web',()=>window.open('https://web.whatsapp.com/','_blank')]:undefined);
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
