@@ -152,7 +152,7 @@ main{max-width:1400px;margin:0 auto}
     </div>
   </aside>
 </main>
-<section id="hv" hidden><div class="hw"><h2>Riwayat</h2><select id="hd" style="width:auto;margin:0 8px 8px 0"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option></select><input id="hs" placeholder="Cari nama item..." style="width:min(280px,100%)"><div id="hl"></div></div></section>
+<section id="hv" hidden><div class="hw"><h2>Riwayat</h2><select id="hd" style="width:auto;margin:0 8px 8px 0"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option><option value="all">Semua</option></select><input id="hs" placeholder="Cari nama item..." style="width:min(280px,100%)"><div id="hl"></div></div></section>
 <div id="modal"></div>
 <div id="toast"></div>
 <script>
@@ -416,7 +416,7 @@ function restoreCart(n){
   });
   return out;
 }
-document.addEventListener('change',e=>{if(e.target.id==='hd'){HD=+e.target.value;loadHist();}});
+document.addEventListener('change',e=>{if(e.target.id==='hd'){HD=e.target.value=='all'?'all':+e.target.value;loadHist();}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
