@@ -81,6 +81,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 td small{display:block;color:var(--mute);font-size:11px}
+#pp{display:none}
+@media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
 .chart{display:block;overflow-x:auto;padding:6px 0}
 .gl{stroke:var(--line);stroke-width:1}
 .ax{fill:var(--mute);font-size:10px}
@@ -188,6 +190,7 @@ main{max-width:1400px;margin:0 auto}
   </aside>
 </main>
 <section id="hv" hidden><div class="hw"><h2>Riwayat</h2><select id="hd" style="width:auto;margin:0 8px 8px 0"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option><option value="all">Semua</option></select><input id="hs" placeholder="Cari nama item..." style="width:min(280px,100%)"><div id="hl"></div></div></section>
+<pre id="pp"></pre>
 <section id="lv" hidden><div class="hw wide">
 <h2>Laporan</h2>
 <div class="lp"><button data-a="lp" data-v="1">Hari ini</button><button class="on" data-a="lp" data-v="7">7 hari</button><button data-a="lp" data-v="M">Bulan ini</button><button data-a="lp" data-v="A">Semua</button><button data-a="lrefresh" title="Muat ulang">&#8635;</button></div>
@@ -531,6 +534,24 @@ const showBar=e=>{
 };
 document.addEventListener('mouseover',showBar);
 document.addEventListener('click',showBar);
+let curS='';
+function printStruk(t){
+  if(/Android/i.test(navigator.userAgent)){
+    const ascii=String(t).replace(/[^\x20-\x7E\n]/g,'?');
+    const bytes=[0x1B,0x40];
+    for(const c of ascii)bytes.push(c.charCodeAt(0));
+    bytes.push(10,10,10,10);
+    let bin='';bytes.forEach(x=>{bin+=String.fromCharCode(x);});
+    location.href='intent:base64,'+btoa(bin)+'#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;';
+  }else{
+    $('pp').textContent=t;window.print();
+  }
+}
+function shareStruk(t){
+  const x='```\n'+t+'\n```';
+  if(navigator.share)navigator.share({text:x}).catch(()=>{});
+  else window.open('https://wa.me/?text='+encodeURIComponent(x),'_blank');
+}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
@@ -548,7 +569,7 @@ document.addEventListener('click',e=>{
     case'pal':TH.pal=b.dataset.v;applyTheme();break;
     case'nota':{
       const n=hist.find(x=>x.id==id);if(!n)break;
-      M(`<h3>Nota ${n.sid||'#'+n.id}${n.st=='Void'?' · VOID':''}</h3><div class="s">${hm(n.at)} · ${n.m}${n.tip?' · tip '+num(n.tip):''}</div><pre>${esc(strukOf(n,true))}</pre>`+(n.st=='Void'?`<div class="s">Alasan: ${esc(n.why)}${n.note?' — '+esc(n.note):''}</div><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`:`<div class="btns"><button data-a="copyn" data-id="${n.id}">Salin struk</button><button data-a="voidf" data-id="${n.id}">Void</button><button class="pri" data-a="close">Tutup</button></div>`));
+      curS=strukOf(n,true);M(`<h3>Nota ${n.sid||'#'+n.id}${n.st=='Void'?' · VOID':''}</h3><div class="s">${hm(n.at)} · ${n.m}${n.tip?' · tip '+num(n.tip):''}</div><pre>${esc(curS)}</pre>`+(n.st=='Void'?`<div class="s">Alasan: ${esc(n.why)}${n.note?' — '+esc(n.note):''}</div><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`:`<div class="btns"><button class="pri" data-a="print">Cetak ulang</button><button data-a="share">Share</button><button data-a="voidf" data-id="${n.id}">Void</button><button class="pri" data-a="close">Tutup</button></div>`));
       break;
     }
     case'copyn':{const n=hist.find(x=>x.id==id);try{navigator.clipboard.writeText(strukOf(n,true));toast('Teks struk disalin.');}catch(x){toast('Salin tidak didukung di sini.');}break;}
@@ -580,9 +601,11 @@ document.addEventListener('click',e=>{
       break;
     case'struk':
       if(!cart.length){toast('Keranjang masih kosong.');break;}
-      M(`<h3>Struk (pratinjau)</h3><pre>${esc(struk())}</pre><p class="s">Prototipe: cetak ke printer thermal dan Share dibuat di versi final.</p><div class="btns"><button data-a="copy">Salin teks</button><button class="pri" data-a="close">Tutup</button></div>`);
+      curS=struk();
+      M(`<h3>Struk</h3><pre>${esc(curS)}</pre><div class="btns"><button class="pri" data-a="print">Cetak</button><button data-a="share">Share</button><button data-a="close">Tutup</button></div>`);
       break;
-    case'copy':try{navigator.clipboard.writeText(struk());toast('Teks struk disalin.');}catch(x){toast('Salin tidak didukung di sini.');}break;
+    case'print':printStruk(curS);break;
+    case'share':shareStruk(curS);break;
     case'pay':openPay();break;
     case'close':closeM();break;
     case'pm':pay.m=b.dataset.v;pay.tip=0;document.querySelectorAll('.seg button').forEach(x=>x.classList.toggle('on',x==b));updatePay();break;
