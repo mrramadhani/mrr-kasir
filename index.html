@@ -81,6 +81,10 @@ table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 td small{display:block;color:var(--mute);font-size:11px}
+.tile.s0{border-color:#c0392b}.tile.s0 small{color:#c0392b}
+.tile.s1{border-color:#d4902a}.tile.s1 small{color:#d4902a}
+.lowbtn{width:100%;margin:0 0 10px;border-color:#d4902a;color:#d4902a;background:transparent;text-align:left}
+#kv label{display:block;margin:8px 0 3px}
 #pp{display:none}
 @media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
 .chart{display:block;overflow-x:auto;padding:6px 0}
@@ -170,10 +174,11 @@ main{max-width:1400px;margin:0 auto}
 </style>
 </head>
 <body>
-<header><div class="hb"><span class="lg">M</span><div><b>MRR Fotokopi, Print &amp; ATK</b> <span id="st" class="st">● Mode uji</span></div></div><div class="hb"><nav><button class="on" data-a="view" data-v="kasir">Kasir</button><button data-a="view" data-v="riwayat">Riwayat</button><button data-a="view" data-v="laporan">Laporan</button></nav><span class="hb"><button class="sw" data-a="pal" data-v="plum" style="background:#3A2F63" title="Plum"></button><button class="sw" data-a="pal" data-v="teal" style="background:#3E8574" title="Teal"></button><button class="sw" data-a="pal" data-v="terra" style="background:#D97D4A" title="Terakota"></button><button class="sw" data-a="pal" data-v="ocean" style="background:#1F5FA8" title="Biru"></button><button class="sw" data-a="pal" data-v="rose" style="background:#A5345C" title="Mawar"></button><button class="sw" data-a="pal" data-v="slate" style="background:#3B4A5A" title="Grafit"></button></span><button class="md" id="ey" data-a="eye" title="Tampilkan/sembunyikan untung">🙈</button><button class="md" id="md" data-a="mode" title="Ganti terang/gelap">☾</button></div></header>
+<header><div class="hb"><span class="lg">M</span><div><b>MRR Fotokopi, Print &amp; ATK</b> <span id="st" class="st">● Mode uji</span></div></div><div class="hb"><nav><button class="on" data-a="view" data-v="kasir">Kasir</button><button data-a="view" data-v="riwayat">Riwayat</button><button data-a="view" data-v="laporan">Laporan</button><button data-a="view" data-v="stok">Stok</button></nav><span class="hb"><button class="sw" data-a="pal" data-v="plum" style="background:#3A2F63" title="Plum"></button><button class="sw" data-a="pal" data-v="teal" style="background:#3E8574" title="Teal"></button><button class="sw" data-a="pal" data-v="terra" style="background:#D97D4A" title="Terakota"></button><button class="sw" data-a="pal" data-v="ocean" style="background:#1F5FA8" title="Biru"></button><button class="sw" data-a="pal" data-v="rose" style="background:#A5345C" title="Mawar"></button><button class="sw" data-a="pal" data-v="slate" style="background:#3B4A5A" title="Grafit"></button></span><button class="md" id="ey" data-a="eye" title="Tampilkan/sembunyikan untung">🙈</button><button class="md" id="md" data-a="mode" title="Ganti terang/gelap">☾</button></div></header>
 <main>
   <section>
     <div id="stat" class="stat" title="Ringkasan hari ini"></div>
+    <div id="lowb"></div>
     <div id="tabs"></div>
     <input id="q" placeholder="Cari barang atau layanan...">
     <div id="sec"></div><div id="grid"></div><div id="info"></div>
@@ -190,6 +195,27 @@ main{max-width:1400px;margin:0 auto}
   </aside>
 </main>
 <section id="hv" hidden><div class="hw"><h2>Riwayat</h2><select id="hd" style="width:auto;margin:0 8px 8px 0"><option value="1">24 jam</option><option value="7" selected>7 hari</option><option value="30">30 hari</option><option value="all">Semua</option></select><input id="hs" placeholder="Cari nama item..." style="width:min(280px,100%)"><div id="hl"></div></div></section>
+<datalist id="dl"></datalist>
+<section id="kv" hidden><div class="hw wide">
+<h2>Stok</h2>
+<div class="lp" id="kt"><button class="on" data-a="kt" data-v="d">Daftar</button><button data-a="kt" data-v="p">Catat pembelian</button><button data-a="kt" data-v="k">Koreksi</button></div>
+<div id="kd"><div class="lp"><input id="ks" placeholder="Cari barang..." style="width:min(260px,100%)"><select id="kf"><option value="a">Semua</option><option value="m">Menipis</option><option value="h">Habis</option></select></div><div id="ktb"></div></div>
+<div id="kp" hidden class="ic"><h4>Catat pembelian stok</h4>
+<label class="s">Barang</label><input id="pb_b" list="dl" placeholder="Ketik ID atau nama barang">
+<label class="s">Jumlah</label><div class="lp"><input id="pb_j" type="number" inputmode="decimal" min="0" style="width:120px"><select id="pb_u"><option value="pack">pack</option><option value="satuan">satuan</option></select><span id="pb_i" class="s"></span></div>
+<label class="s">Total harga beli (termasuk ongkir, dikurangi diskon)</label><input id="pb_t" type="number" inputmode="numeric">
+<label class="s">Tanggal</label><input id="pb_d" type="date">
+<label class="s">Catatan</label><input id="pb_c" placeholder="mis. Shopee">
+<div class="s" id="pb_m" style="margin-top:8px"></div>
+<div class="btns"><button class="pri" data-a="kbuy">Simpan pembelian</button></div></div>
+<div id="kk" hidden class="ic"><h4>Koreksi stok</h4>
+<label class="s">Barang</label><input id="kk_b" list="dl" placeholder="Ketik ID atau nama barang">
+<label class="s">Jumlah koreksi (minus untuk mengurangi, mis. -3)</label><input id="kk_j" type="number" inputmode="decimal">
+<label class="s">Alasan</label><select id="kk_a"><option>Salah cetak</option><option>Rusak atau hilang</option><option>Selisih hitung</option><option>Lainnya</option></select>
+<label class="s">Catatan</label><input id="kk_c" placeholder="opsional">
+<div class="btns"><button class="pri" data-a="kkor">Simpan koreksi</button></div></div>
+<div id="klg" class="s" style="margin-top:12px"></div>
+</div></section>
 <pre id="pp"></pre>
 <section id="lv" hidden><div class="hw wide">
 <h2>Laporan</h2>
@@ -248,6 +274,7 @@ function addItem(i){
   const l=cart.find(x=>x.t=='item'&&x.i==i);
   if(l)l.q++;
   else{const d=ITEMS.find(x=>x[0]==i);cart.push({id:++uid,t:'item',i,n:d[1],p:d[3],m:d[4],q:1});}
+  {const dd=ITEMS.find(x=>x[0]==i),ln=cart.find(x=>x.t=='item'&&x.i==i);if(dd&&ln&&ln.q>dd[5])toast(`Stok ${dd[1]} tinggal ${Math.max(0,dd[5])}`);}
   render();
 }
 function lineH(l){
@@ -265,7 +292,7 @@ function render(){
     if(k=='fk'||k=='bt'){const n=k=='fk'?'Fotokopi':'Bolak-balik';all.push({n:n+' baru',c:'Jasa',h:`<button class="tile new" data-a="svcnew" data-k="${k}"><i class="bd">+</i><span>${n} baru</span><small>pekerjaan terpisah</small></button>`});}
   });
   PPOB.forEach((p,i)=>all.push({n:p[0],c:'PPOB',h:`<button class="tile pp" data-a="ppobf" data-i="${i}"><i class="bd">${ini(p[0])}</i><span>${p[0]}</span><small>admin ${fmt(p[1])}</small></button>`}));
-  ITEMS.forEach(x=>all.push({n:x[1],c:'ATK',k:x[2],h:`<button class="tile" data-a="item" data-i="${x[0]}"><i class="bd">${ini(x[1])}</i><span>${x[1]}</span><small>${fmt(x[3])}</small></button>`}));
+  ITEMS.forEach(x=>all.push({n:x[1],c:'ATK',k:x[2],h:`<button class="tile${stkCls(x)}" data-a="item" data-i="${x[0]}"><i class="bd">${ini(x[1])}</i><span>${x[1]}</span><small>${fmt(x[3])} · ${stkTxt(x)}</small></button>`}));
   const q=$('q').value.trim().toLowerCase();
   const show=q?all.filter(o=>o.n.toLowerCase().includes(q)):all.filter(o=>o.c==tab);
   let last='';
@@ -277,6 +304,7 @@ function render(){
   const td=new Date().toDateString(),ok=hist.filter(n=>n.st!='Void'&&n.at.toDateString()==td),om=ok.reduce((a,n)=>a+n.total,0),un=ok.reduce((a,n)=>a+n.untung,0);
   $('stat').innerHTML=`<div><span>Nota</span><b>${ok.length}</b></div><div><span>Omzet</span><b>${fmt(om)}</b></div><div><span>Untung</span><b>${U(un)}</b></div>`;
   $('cn').textContent=cart.length||'';
+  const lo=ITEMS.filter(x=>x[5]<=0||(x[6]>0&&x[5]<=x[6]));$('lowb').innerHTML=lo.length?`<button class="lowbtn" data-a="low">⚠ ${lo.length} barang menipis atau habis · lihat</button>`:'';
   $('lines').innerHTML=cart.length?cart.map(lineH).join(''):'<div class="empty"><div class="ei">🧾</div>Keranjang kosong<br><span class="s">Ketuk layanan atau barang untuk menambah.</span></div>';
   const cur={};let fl2=false;
   cart.forEach((l,i)=>{cur[l.id]=l.q;if(!(l.id in prevQ)||l.q>prevQ[l.id]){const e=$('lines').children[i];if(e){e.classList.add('fl');fl2=true;}}});
@@ -343,7 +371,7 @@ const p2=n=>String(n).padStart(2,'0');
 const U=n=>SU?fmt(n):'Rp•••';
 const setSt=t=>{$('st').textContent=t;};
 const SEC={Jasa:['Layanan cetak & fotokopi','Harga tier dihitung otomatis dari jumlah sisi; print memakai harga tetap per lembar.'],PPOB:['Pembayaran digital','Isi detail transaksi di formulir. Untung = biaya admin + hemat promo.'],ATK:['Alat tulis & kantor','Ketuk barang untuk menambah; kategori tampil sebagai sub-judul.']};
-const infoJ=()=>`<div class="ic"><h4>Daftar harga jasa</h4><div class="rw"><div><span>Fotokopi 1 lembar</span><b>500</b></div><div><span>2–3 lembar</span><b>1.000</b></div><div><span>4 lembar</span><b>1.500</b></div><div><span>5–6 lembar</span><b>2.000</b></div><div><span>7+ lembar</span><b>300/lembar</b></div><div><span>Print hitam putih</span><b>500</b></div><div><span>Print warna penuh</span><b>2.000</b></div><div><span>Print warna setengah</span><b>1.500</b></div><div><span>Print warna sedikit</span><b>1.000</b></div></div><div class="s">Bolak-balik dihitung per sisi dengan tabel yang sama. Bawa kertas sendiri: potongan ${fmt(KJ)} per lembar. Total jasa dibulatkan ke atas Rp500.</div></div>`;
+const infoJ=()=>`<div class="ic"><h4>Daftar harga jasa</h4><div class="rw"><div><span>Fotokopi 1 lembar</span><b>500</b></div><div><span>2–3 lembar</span><b>1.000</b></div><div><span>4 lembar</span><b>1.500</b></div><div><span>5–6 lembar</span><b>2.000</b></div><div><span>7+ lembar</span><b>300/lembar</b></div><div><span>Print hitam putih</span><b>500</b></div><div><span>Print warna penuh</span><b>2.000</b></div><div><span>Print warna setengah</span><b>1.500</b></div><div><span>Print warna sedikit</span><b>1.000</b></div></div><div class="s">Stok kertas: A4 ${STK['KRT-001']??'-'} lembar · F4 ${STK['KRT-002']??'-'} lembar</div><div class="s">Bolak-balik dihitung per sisi dengan tabel yang sama. Bawa kertas sendiri: potongan ${fmt(KJ)} per lembar. Total jasa dibulatkan ke atas Rp500.</div></div>`;
 const infoP=()=>`<div class="ic"><h4>Biaya admin per jenis</h4><div class="rw">${PPOB.map(p=>`<div><span>${p[0]}</span><b>+${num(p[1])}</b></div>`).join('')}</div><div class="s">Harga jual = harga normal + admin. Modal terisi otomatis sama dengan harga normal; ubah kalau ada promo.</div></div>`;
 const ini=s=>s.replace(/[^A-Za-z0-9 ]/g,'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const TH={mode:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light',pal:'plum'};
@@ -363,9 +391,9 @@ function renderHist(){
   $('hl').innerHTML=L.length?L.map(n=>`<div class="hn${n.st=='Void'?' vd':''}" data-a="nota" data-id="${n.id}"><div class="r"><b>${n.sid||'#'+n.id} · ${hm(n.at)}</b><b>${fmt(n.total)}</b></div><div class="s">${esc(n.cart.map(nm).join(', '))}</div><div class="s">${n.m}${n.tip?' · tip '+num(n.tip):''}${n.st=='Void'?' · VOID: '+esc(n.why):''}${n.rep?' · diganti nota #'+n.rep:''}</div></div>`).join(''):'<p class="empty">Belum ada nota. Simpan transaksi dari layar Kasir.</p>';
 }
 function setView(v){
-  view=v;document.querySelector('main').hidden=v!='kasir';$('hv').hidden=v!='riwayat';$('lv').hidden=v!='laporan';
+  view=v;document.querySelector('main').hidden=v!='kasir';$('hv').hidden=v!='riwayat';$('lv').hidden=v!='laporan';$('kv').hidden=v!='stok';
   document.querySelectorAll('header nav button').forEach(x=>x.classList.toggle('on',x.dataset.v==v));
-  if(v=='riwayat'){renderHist();loadHist();}else if(v=='laporan'){renderLap();loadLap();}else render();
+  if(v=='riwayat'){renderHist();loadHist();}else if(v=='laporan'){renderLap();loadLap();}else if(v=='stok'){renderStok();}else render();
 }
 
 let PIN='';
@@ -378,9 +406,9 @@ async function api(action,extra){
 function applyData(d){
   const n=v=>Number(v)||0;
   const H=d.barang[0].map(x=>String(x).trim()),R=d.barang.slice(1),ix=k=>H.indexOf(k);
-  ITEMS=R.filter(r=>r[ix('Jenis')]=='Barang'&&r[ix('Aktif')]=='Ya'&&n(r[ix('Harga Jual')])>0).map(r=>[r[ix('ID Barang')],r[ix('Nama Barang')],r[ix('Kategori')],n(r[ix('Harga Jual')]),n(r[ix('Modal Satuan')])]);
+  ITEMS=R.filter(r=>r[ix('Jenis')]=='Barang'&&r[ix('Aktif')]=='Ya'&&n(r[ix('Harga Jual')])>0).map(r=>[r[ix('ID Barang')],r[ix('Nama Barang')],r[ix('Kategori')],n(r[ix('Harga Jual')]),n(r[ix('Modal Satuan')]),n(r[ix('Stok')]),n(r[ix('Stok Minimum')]),n(r[ix('Isi per Pack')])]);
   const B=id=>R.find(r=>r[0]==id)||[];
-  NAMA={};KAT={};R.forEach(r=>{NAMA[r[0]]=r[1];KAT[r[0]]=r[2];});
+  NAMA={};KAT={};STK={};R.forEach(r=>{NAMA[r[0]]=r[1];KAT[r[0]]=r[2];STK[r[0]]=n(r[ix('Stok')]);});
   KER={A4:n(B('KRT-001')[ix('Modal Satuan')]),F4:n(B('KRT-002')[ix('Modal Satuan')]),TANPA:0};
   KJ=n(B('KRT-001')[ix('Harga Jual')])||100;
   const A=d.aturan.slice(1);
@@ -449,6 +477,7 @@ function rowsToNotas(rows){
 async function loadHist(){
   try{hist=rowsToNotas(await api('history',{days:HD}));}
   catch(e){toast('Gagal memuat riwayat: '+e.message);}
+  refreshData();
   if(view=='riwayat')renderHist();else render();
 }
 const JREV=Object.fromEntries(Object.entries(JSA).map(([k,v])=>[v,k]));
@@ -561,6 +590,63 @@ async function shareStruk(t){
   const ok=await copyTxt(x);
   toast(ok?'Struk disalin. Tempel (Ctrl+V) di chat WhatsApp.':'Gagal menyalin struk.',ok?['Buka WhatsApp Web',()=>window.open('https://web.whatsapp.com/','_blank')]:undefined);
 }
+let STK={},SLOG=[],kt='d';
+const stkCls=x=>x[5]<=0?' s0':(x[6]>0&&x[5]<=x[6])?' s1':'';
+const stkTxt=x=>x[5]<=0?'habis':'stok '+num(x[5]);
+const bid=v=>String(v||'').trim().split(' ')[0].toUpperCase();
+async function refreshData(){
+  try{applyData(await api('load'));}catch(e){}
+  if(view=='stok')renderStok();else if(view=='kasir')render();
+}
+function renderStok(){
+  $('dl').innerHTML=ITEMS.map(x=>`<option value="${x[0]} \u2014 ${esc(x[1])}"></option>`).join('');
+  document.querySelectorAll('#kt button').forEach(x=>x.classList.toggle('on',x.dataset.v==kt));
+  $('kd').hidden=kt!='d';$('kp').hidden=kt!='p';$('kk').hidden=kt!='k';
+  if(!$('pb_d').value)$('pb_d').value=new Date().toLocaleDateString('en-CA');
+  const f=$('ks').value.trim().toLowerCase(),m=$('kf').value;
+  const L=ITEMS.filter(x=>(!f||(x[0]+' '+x[1]).toLowerCase().includes(f))&&(m=='a'||(m=='h'&&x[5]<=0)||(m=='m'&&(x[5]<=0||(x[6]>0&&x[5]<=x[6]))))).sort((a,b)=>a[2]==b[2]?a[1].localeCompare(b[1]):a[2].localeCompare(b[2]));
+  const col=x=>x[5]<=0?' style="color:#c0392b;font-weight:700"':(x[6]>0&&x[5]<=x[6])?' style="color:#d4902a;font-weight:700"':'';
+  $('ktb').innerHTML=L.length?`<table><tr><th>Barang</th><th>Stok</th><th>Min</th><th>Modal</th></tr>${L.map(x=>`<tr><td>${esc(x[1])}<small>${x[0]} \u00b7 ${esc(x[2])}</small></td><td${col(x)}>${num(x[5])}</td><td>${x[6]||'-'}</td><td>${num(x[4])}</td></tr>`).join('')}</table>`:'<p class="empty">Tidak ada barang.</p>';
+  $('klg').innerHTML=SLOG.length?'<b>Tercatat sesi ini</b><br>'+SLOG.map(esc).join('<br>'):'';
+  updatePb();
+}
+function updatePb(){
+  const x=ITEMS.find(i=>i[0]==bid($('pb_b').value));
+  const j=+$('pb_j').value||0,u=$('pb_u').value,t=+$('pb_t').value||0;
+  if(!x){$('pb_i').textContent='';$('pb_m').textContent='';return;}
+  const isi=x[7]||1,q=u=='pack'?j*isi:j;
+  $('pb_i').textContent=u=='pack'?`1 pack = ${isi} satuan`:'';
+  $('pb_m').textContent=q&&t?`${num(q)} satuan \u00b7 modal pembelian ini Rp${num(t/q)} per satuan (modal rata-rata dihitung otomatis oleh sheet)`:`Stok sekarang ${num(x[5])}`;
+}
+async function kBuy(b){
+  const x=ITEMS.find(i=>i[0]==bid($('pb_b').value)),j=+$('pb_j').value,t=+$('pb_t').value,u=$('pb_u').value;
+  if(!x)return toast('Pilih barang dari daftar.');
+  if(!(j>0)||!(t>0))return toast('Isi jumlah dan total harga beli.');
+  b.disabled=true;setSt('Menyimpan\u2026');
+  try{
+    const r=await api('stock',{e:{tipe:'Pembelian',id:x[0],jumlah:j,satuan:u,total:t,tanggal:$('pb_d').value,catatan:$('pb_c').value.trim()}});
+    SLOG.unshift(`${hm(new Date())} \u00b7 Beli ${x[1]}: ${j} ${u}, Rp${num(t)} \u2192 stok ${num(r.stok)}, modal Rp${num(r.modal)}`);
+    ['pb_b','pb_j','pb_t','pb_c'].forEach(k=>{$(k).value='';});
+    toast(`Tersimpan. Stok ${x[1]} sekarang ${num(r.stok)}.`);setSt('\u2713 Tersimpan');refreshData();
+  }catch(e){toast('Gagal: '+e.message);setSt('\u26a0 Gagal menyimpan');}
+  b.disabled=false;
+}
+async function kKor(b){
+  const x=ITEMS.find(i=>i[0]==bid($('kk_b').value)),j=+$('kk_j').value;
+  if(!x)return toast('Pilih barang dari daftar.');
+  if(!j)return toast('Isi jumlah koreksi (boleh minus).');
+  b.disabled=true;setSt('Menyimpan\u2026');
+  try{
+    const cat=$('kk_a').value+($('kk_c').value.trim()?': '+$('kk_c').value.trim():'');
+    const r=await api('stock',{e:{tipe:'Koreksi',id:x[0],jumlah:j,catatan:cat}});
+    SLOG.unshift(`${hm(new Date())} \u00b7 Koreksi ${x[1]}: ${j>0?'+':''}${j} (${cat}) \u2192 stok ${num(r.stok)}`);
+    ['kk_b','kk_j','kk_c'].forEach(k=>{$(k).value='';});
+    toast(`Tersimpan. Stok ${x[1]} sekarang ${num(r.stok)}.`);setSt('\u2713 Tersimpan');refreshData();
+  }catch(e){toast('Gagal: '+e.message);setSt('\u26a0 Gagal menyimpan');}
+  b.disabled=false;
+}
+document.addEventListener('input',e=>{const i=e.target.id;if(i=='ks')renderStok();else if(['pb_b','pb_j','pb_u','pb_t'].includes(i))updatePb();});
+document.addEventListener('change',e=>{const i=e.target.id;if(i=='kf')renderStok();else if(i=='pb_u')updatePb();});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
@@ -570,6 +656,10 @@ document.addEventListener('click',e=>{
   switch(a){
     case'lp':LP=b.dataset.v;$('lf').value='';$('lt').value='';document.querySelectorAll('.lp [data-a="lp"]').forEach(x=>x.classList.toggle('on',x==b));renderLap();break;
     case'lrefresh':loadLap();break;
+    case'low':{const lo=ITEMS.filter(x=>x[5]<=0||(x[6]>0&&x[5]<=x[6]));M(`<h3>Barang menipis atau habis</h3><table><tr><th>Barang</th><th>Stok</th><th>Min</th></tr>${lo.map(x=>`<tr><td>${esc(x[1])}</td><td>${num(x[5])}</td><td>${x[6]||'-'}</td></tr>`).join('')}</table><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`);break;}
+    case'kt':kt=b.dataset.v;renderStok();break;
+    case'kbuy':kBuy(b);break;
+    case'kkor':kKor(b);break;
     case'login':PIN=$('pin').value.trim();loadAll();break;
     case'view':setView(b.dataset.v);break;
     case'mode':TH.mode=TH.mode=='dark'?'light':'dark';applyTheme();break;
