@@ -85,6 +85,10 @@ td small{display:block;color:var(--mute);font-size:11px}
 .tile.s1{border-color:#d4902a}.tile.s1 small{color:#d4902a}
 .lowbtn{width:100%;margin:0 0 10px;border-color:#d4902a;color:#d4902a;background:transparent;text-align:left}
 #kv label{display:block;margin:8px 0 3px}
+.hb{flex-wrap:wrap;min-width:0}
+header{max-width:100%}
+header nav{flex-wrap:wrap}
+@media(max-width:700px){header{padding:8px 10px;gap:6px}header nav button{padding:4px 9px}.sw{width:20px;height:20px}}
 #pp{display:none}
 @media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
 .chart{display:block;overflow-x:auto;padding:6px 0}
@@ -426,9 +430,10 @@ function pinScreen(msg){
 async function loadAll(){
   setSt('Memuat data…');
   try{
-    applyData(await api('load'));
+    try{const d=await api('boot',{days:HD});applyData(d.load);hist=rowsToNotas(d.hist);}
+    catch(e){if(e.message!=='Aksi tidak dikenal')throw e;applyData(await api('load'));loadHist();}
     try{sessionStorage.setItem('mrr-pin',PIN);}catch(e){}
-    closeM();setSt('● Terhubung');render();loadHist();
+    closeM();setSt('● Terhubung');render();
   }catch(e){
     try{sessionStorage.removeItem('mrr-pin');}catch(x){}
     PIN='';setSt('● Belum masuk');pinScreen(e.message);
@@ -475,9 +480,9 @@ function rowsToNotas(rows){
   return order.map(k=>m[k]).reverse().map((n,i)=>{n.id=i+1;return n;});
 }
 async function loadHist(){
+  refreshData();
   try{hist=rowsToNotas(await api('history',{days:HD}));}
   catch(e){toast('Gagal memuat riwayat: '+e.message);}
-  refreshData();
   if(view=='riwayat')renderHist();else render();
 }
 const JREV=Object.fromEntries(Object.entries(JSA).map(([k,v])=>[v,k]));
@@ -660,7 +665,7 @@ document.addEventListener('click',e=>{
     case'kt':kt=b.dataset.v;renderStok();break;
     case'kbuy':kBuy(b);break;
     case'kkor':kKor(b);break;
-    case'login':PIN=$('pin').value.trim();loadAll();break;
+    case'login':PIN=$('pin').value.trim();b.disabled=true;b.textContent='Memuat…';loadAll();break;
     case'view':setView(b.dataset.v);break;
     case'mode':TH.mode=TH.mode=='dark'?'light':'dark';applyTheme();break;
     case'eye':SU=!SU;if(view=='laporan')renderLap();$('ey').textContent=SU?'👁':'🙈';render();break;
