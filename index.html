@@ -88,6 +88,8 @@ td small{display:block;color:var(--mute);font-size:11px}
 .hb{flex-wrap:wrap;min-width:0}
 header{max-width:100%}
 header nav{flex-wrap:wrap}
+.kc{margin:0 0 10px}
+.kc.need button{border-color:var(--acc)}
 @media(max-width:700px){header{padding:8px 10px;gap:6px}header nav button{padding:4px 9px}.sw{width:20px;height:20px}}
 #pp{display:none}
 @media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
@@ -271,7 +273,7 @@ function addSvc(k,fresh){
   if(tier&&!fresh)l=cart.find(x=>x.id==active[k]);
   if(!tier)l=cart.find(x=>x.t=='svc'&&x.k==k);
   if(l)l.q++;
-  else{l={id:++uid,t:'svc',k,q:1,kr:'A4',lb:''};cart.push(l);if(tier)active[k]=l.id;}
+  else{if(!KRSEL){toast('Pilih kertas yang digunakan dulu (A4, F4, atau bawa sendiri).');return;}l={id:++uid,t:'svc',k,q:1,kr:KRSEL,lb:''};cart.push(l);if(tier)active[k]=l.id;}
   render();
 }
 function addItem(i){
@@ -283,10 +285,10 @@ function addItem(i){
 }
 function lineH(l){
   const c=calc(l);
-  if(l.t=='ppob')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="r s"><span>${num(l.asli)} + admin ${num(l.admin)} · ${l.pf}</span><span>untung ${U(c.jual-l.m)}</span></div>${l.cat?`<div class="s">${esc(l.cat)}</div>`:''}<div class="ctl"><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
+  if(l.t=='ppob')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="r s"><span>${num(l.asli)} + admin ${num(l.admin)} · ${l.pf||'platform belum dipilih'}</span><span>untung ${U(c.jual-l.m)}</span></div>${l.cat?`<div class="s">${esc(l.cat)}</div>`:''}<div class="ctl"><select data-a="pf" data-id="${l.id}"><option value="">Pilih platform</option>${PF.map(v=>`<option${l.pf==v?' selected':''}>${v}</option>`).join('')}</select><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
   if(l.t=='item')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
   const tier=SVC[l.k][1]=='tier';
-  return`<div class="ln"><div class="r"><b>${SVC[l.k][0]}</b><span>${num(c.jual)}</span></div><div class="s">${l.q} lembar${tier&&active[l.k]==l.id?' · baris aktif':''}${l.kr=='TANPA'?' · tanpa kertas, potongan −'+num(KJ*l.q):''}</div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><select data-a="kr" data-id="${l.id}">${['A4','F4','TANPA'].map(v=>`<option value="${v}"${l.kr==v?' selected':''}>${v=='TANPA'?'Tanpa kertas (bawa sendiri)':v}</option>`).join('')}</select>${tier?`<input class="lb" placeholder="Label" value="${esc(l.lb)}" data-a="lb" data-id="${l.id}">`:''}<button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
+  return`<div class="ln"><div class="r"><b>${SVC[l.k][0]}</b><span>${num(c.jual)}</span></div><div class="s">${l.q} lembar${tier&&active[l.k]==l.id?' · baris aktif':''}${l.kr=='TANPA'?' · tanpa kertas, potongan −'+num(KJ*l.q):''}</div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><select data-a="kr" data-id="${l.id}">${l.kr?'':'<option value="">Pilih kertas</option>'}${['A4','F4','TANPA'].map(v=>`<option value="${v}"${l.kr==v?' selected':''}>${v=='TANPA'?'Tanpa kertas (bawa sendiri)':v}</option>`).join('')}</select>${tier?`<input class="lb" placeholder="Label" value="${esc(l.lb)}" data-a="lb" data-id="${l.id}">`:''}<button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
 }
 function render(){
   $('tabs').innerHTML=TABS.map(x=>`<button class="tab${x==tab?' on':''}" data-a="tab" data-v="${x}">${x}</button>`).join('');
@@ -302,7 +304,7 @@ function render(){
   let last='';
   $('grid').innerHTML=show.map(o=>{let h='';if(o.k&&o.k!=last&&!q){last=o.k;h=`<div class="gh">${o.k}</div>`;}return h+o.h;}).join('')||'<p class="empty">Tidak ditemukan.</p>';
   $('grid').className=(!q&&tab!='ATK')?'few':'';
-  $('sec').innerHTML=q?'':`<div class="sc"><b>${SEC[tab][0]}</b><span>${SEC[tab][1]}</span></div>`;
+  $('sec').innerHTML=(q?'':`<div class="sc"><b>${SEC[tab][0]}</b><span>${SEC[tab][1]}</span></div>`)+((tab=='Jasa'||q)?krChips():'');
   $('info').innerHTML=q?'':tab=='Jasa'?infoJ():tab=='PPOB'?infoP():'';
   const t=totals();
   const td=new Date().toDateString(),ok=hist.filter(n=>n.st!='Void'&&n.at.toDateString()==td),om=ok.reduce((a,n)=>a+n.total,0),un=ok.reduce((a,n)=>a+n.untung,0);
@@ -340,7 +342,7 @@ function struk(){
   return L.join('\n');
 }
 function openPpob(i){
-  M(`<h3>${PPOB[i][0]}</h3><label>Detail</label><input id="pd" placeholder="mis. Dana 30.000"><label>Harga normal (sudah termasuk admin platform)</label><input id="pa" type="number" inputmode="numeric"><label>Biaya admin (keuntunganmu)</label><input id="pm2" type="number" inputmode="numeric" value="${PPOB[i][1]}"><div class="r" style="margin-top:8px"><span>Harga jual (pembeli)</span><b id="pj">Rp0</b></div><label>Modal (yang kamu bayar; ubah kalau ada promo)</label><input id="pmod" type="number" inputmode="numeric"><div class="r s"><span>Untung = admin + hemat promo</span><span id="pu">Rp0</span></div><label>Platform</label><select id="ppf"><option>Mitra Shopee</option><option>ShopeePay</option><option>Shopee</option></select><label>Catatan (mis. nomor token)</label><input id="pc"><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="ppadd" data-i="${i}">Tambah</button></div>`);
+  M(`<h3>${PPOB[i][0]}</h3><label>Detail</label><input id="pd" placeholder="mis. Dana 30.000"><label>Harga normal (sudah termasuk admin platform)</label><input id="pa" type="number" inputmode="numeric"><label>Biaya admin (keuntunganmu)</label><input id="pm2" type="number" inputmode="numeric" value="${PPOB[i][1]}"><div class="r" style="margin-top:8px"><span>Harga jual (pembeli)</span><b id="pj">Rp0</b></div><label>Modal (yang kamu bayar; ubah kalau ada promo)</label><input id="pmod" type="number" inputmode="numeric"><div class="r s"><span>Untung = admin + hemat promo</span><span id="pu">Rp0</span></div><label>Platform</label><select id="ppf"><option value="">Pilih platform…</option><option>Mitra Shopee</option><option>ShopeePay</option><option>Shopee</option></select><label>Catatan (mis. nomor token)</label><input id="pc"><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="ppadd" data-i="${i}">Tambah</button></div>`);
 }
 function updatePpob(e){
   const mo=$('pmod');
@@ -353,6 +355,7 @@ function updatePpob(e){
 }
 function openPay(){
   if(!cart.length)return toast('Keranjang masih kosong.');
+  if(needKr())return;
   pay={m:'Tunai',recv:0,tip:0,total:totals().total};
   M(`<h3>Pembayaran</h3><div class="big">${fmt(pay.total)}</div><div class="seg"><button class="on" data-a="pm" data-v="Tunai">Tunai</button><button data-a="pm" data-v="QRIS">QRIS</button></div><div id="cash"><label>Uang diterima</label><input id="recv" type="number" inputmode="numeric" placeholder="0"><div class="quick"><button data-a="qk" data-v="pas">Uang pas</button>${[5000,10000,20000,50000,100000].map(v=>`<button data-a="qk" data-v="${v}">${num(v)}</button>`).join('')}</div><div class="r"><span>Kembalian</span><b id="kmb">Rp0</b></div><button class="ghost" id="nt" data-a="notip">Tanpa kembalian (jadikan tip)</button><div class="r s"><span>Tip</span><span id="tip">Rp0</span></div></div><div class="btns"><button data-a="close">Batal</button><button class="pri" id="sv" data-a="save" disabled>Simpan</button></div>`);
 }
@@ -364,6 +367,7 @@ function updatePay(){
   $('sv').disabled=pay.recv<pay.total;$('nt').style.display=kmb>0?'':'none';
 }
 function saveLocal(){
+  KRSEL='';
   const t=totals(),tip=pay.m=='QRIS'?0:pay.tip;
   hist.push({id:++nid,at:new Date(),total:t.total,untung:t.untung+tip,tip,m:pay.m,cart:JSON.parse(JSON.stringify(cart)),st:'Aktif'});
   if(fix){const o=hist.find(x=>x.id==fix);if(o)o.rep=nid;fix=null;}
@@ -387,7 +391,7 @@ function applyTheme(){
   try{localStorage.setItem('mrr-th',JSON.stringify(TH));}catch(e){}
 }
 const hm=d=>`${p2(d.getDate())}/${p2(d.getMonth()+1)} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
-const nm=l=>l.t=='svc'?`${SHORT[l.k]} ${l.q} lbr`:l.t=='item'?(l.q>1?`${l.n} x${l.q}`:l.n):l.n;
+const nm=l=>l.t=='svc'?`${SHORT[l.k]} ${l.q} lbr`:l.t=='item'?(l.q>1?`${l.n} x${l.q}`:l.n):l.n+(l.kr?' · '+(KN[l.kr]||l.kr):'')+(l.pf?' · '+l.pf:'');
 function strukOf(n,mark){const k=cart,a=SD,b=SM;cart=n.cart;SD=n.at;SM=mark;const s=struk();cart=k;SD=a;SM=b;return s;}
 function renderHist(){
   const f=hq.trim().toLowerCase();
@@ -474,7 +478,7 @@ function rowsToNotas(rows){
     }else{
       const q=Number(r[6])||1,idi=String(r[3]);
       const nama=(q>1&&idi.indexOf('JSA')!=0&&idi.indexOf('PPB')!=0)?`${r[4]} x${q}`:r[4];
-      n.cart.push({t:'row',idi,n:nama,jual,modal:Number(r[8])||0,q,cat:r[13]});
+      n.cart.push({t:'row',idi,n:nama,jual,modal:Number(r[8])||0,q,cat:r[13],kr:r[14],pf:r[11]});
     }
   });
   return order.map(k=>m[k]).reverse().map((n,i)=>{n.id=i+1;return n;});
@@ -492,8 +496,8 @@ function restoreCart(n){
   n.rows.forEach(r=>{
     if(r[2]!='Item')return;
     const id=String(r[3]),q=Number(r[6])||1,jual=Number(r[7])||0,modal=Number(r[8])||0;
-    if(JREV[id])out.push({id:++uid,t:'svc',k:JREV[id],q,kr:KREV[r[14]]||'A4',lb:r[5]||''});
-    else if(id.indexOf('PPB')==0){const i=PPOBID.indexOf(id),ad=i>=0?PPOB[i][1]:0;out.push({id:++uid,t:'ppob',ty:id,n:r[4],asli:jual-ad,admin:ad,m:modal,pf:r[11]||'Mitra Shopee',cat:r[13]||''});}
+    if(JREV[id])out.push({id:++uid,t:'svc',k:JREV[id],q,kr:KREV[r[14]]||'',lb:r[5]||''});
+    else if(id.indexOf('PPB')==0){const i=PPOBID.indexOf(id),ad=i>=0?PPOB[i][1]:0;out.push({id:++uid,t:'ppob',ty:id,n:r[4],asli:jual-ad,admin:ad,m:modal,pf:r[11]||'',cat:r[13]||''});}
     else{const d=ITEMS.find(x=>x[0]==id);out.push(d?{id:++uid,t:'item',i:id,n:d[1],p:d[3],m:d[4],q}:{id:++uid,t:'item',i:id,n:r[4],p:jual/q,m:modal/q,q});}
   });
   return out;
@@ -652,6 +656,21 @@ async function kKor(b){
 }
 document.addEventListener('input',e=>{const i=e.target.id;if(i=='ks')renderStok();else if(['pb_b','pb_j','pb_u','pb_t'].includes(i))updatePb();});
 document.addEventListener('change',e=>{const i=e.target.id;if(i=='kf')renderStok();else if(i=='pb_u')updatePb();});
+let KRSEL='';
+const PF=['Mitra Shopee','ShopeePay','Shopee'];
+const KN={'KRT-001':'A4','KRT-002':'F4','TANPA':'tanpa kertas'};
+function krChips(){return `<div class="lp kc${KRSEL?'':' need'}"><span class="s">Kertas yang dipakai:</span>${[['A4','A4'],['F4','F4'],['TANPA','Bawa sendiri']].map(([v,t])=>`<button data-a="krs" data-v="${v}"${KRSEL==v?' class="on"':''}>${t}</button>`).join('')}</div>`;}
+function needKr(){
+  const a=cart.find(x=>x.t=='svc'&&!x.kr);
+  if(a){toast('Pilih kertas yang digunakan untuk '+SHORT[a.k]+' '+a.q+' lembar.');return true;}
+  const p=cart.find(x=>x.t=='ppob'&&!x.pf);
+  if(p){toast('Pilih platform yang digunakan untuk '+p.n+'.');return true;}
+  return false;
+}
+function paperInfo(n){
+  const a=n.cart.filter(l=>l.kr||l.pf).map(l=>`${esc(l.n)}: ${l.kr?(KN[l.kr]||l.kr):l.pf}`);
+  return a.length?`<div class="s">${a.join('<br>')}</div>`:'';
+}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
@@ -661,6 +680,7 @@ document.addEventListener('click',e=>{
   switch(a){
     case'lp':LP=b.dataset.v;$('lf').value='';$('lt').value='';document.querySelectorAll('.lp [data-a="lp"]').forEach(x=>x.classList.toggle('on',x==b));renderLap();break;
     case'lrefresh':loadLap();break;
+    case'krs':KRSEL=b.dataset.v;render();break;
     case'low':{const lo=ITEMS.filter(x=>x[5]<=0||(x[6]>0&&x[5]<=x[6]));M(`<h3>Barang menipis atau habis</h3><table><tr><th>Barang</th><th>Stok</th><th>Min</th></tr>${lo.map(x=>`<tr><td>${esc(x[1])}</td><td>${num(x[5])}</td><td>${x[6]||'-'}</td></tr>`).join('')}</table><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`);break;}
     case'kt':kt=b.dataset.v;renderStok();break;
     case'kbuy':kBuy(b);break;
@@ -673,7 +693,7 @@ document.addEventListener('click',e=>{
     case'pal':TH.pal=b.dataset.v;applyTheme();break;
     case'nota':{
       const n=hist.find(x=>x.id==id);if(!n)break;
-      curS=strukOf(n,true);M(`<h3>Nota ${n.sid||'#'+n.id}${n.st=='Void'?' · VOID':''}</h3><div class="s">${hm(n.at)} · ${n.m}${n.tip?' · tip '+num(n.tip):''}</div><pre>${esc(curS)}</pre>`+(n.st=='Void'?`<div class="s">Alasan: ${esc(n.why)}${n.note?' — '+esc(n.note):''}</div><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`:`<div class="btns"><button class="pri" data-a="print">Cetak ulang</button><button data-a="share">Share</button><button data-a="voidf" data-id="${n.id}">Void</button><button class="pri" data-a="close">Tutup</button></div>`));
+      curS=strukOf(n,true);M(`<h3>Nota ${n.sid||'#'+n.id}${n.st=='Void'?' · VOID':''}</h3><div class="s">${hm(n.at)} · ${n.m}${n.tip?' · tip '+num(n.tip):''}</div><pre>${esc(curS)}</pre>${paperInfo(n)}`+(n.st=='Void'?`<div class="s">Alasan: ${esc(n.why)}${n.note?' — '+esc(n.note):''}</div><div class="btns"><button class="pri" data-a="close">Tutup</button></div>`:`<div class="btns"><button class="pri" data-a="print">Cetak ulang</button><button data-a="share">Share</button><button data-a="voidf" data-id="${n.id}">Void</button><button class="pri" data-a="close">Tutup</button></div>`));
       break;
     }
     case'copyn':{const n=hist.find(x=>x.id==id);try{navigator.clipboard.writeText(strukOf(n,true));toast('Teks struk disalin.');}catch(x){toast('Salin tidak didukung di sini.');}break;}
@@ -700,11 +720,12 @@ document.addEventListener('click',e=>{
     case'del':{const keep=JSON.parse(JSON.stringify(cart));cart=cart.filter(x=>x.id!=id);render();toast('Baris dihapus.',['Urungkan',()=>{cart=keep;render();}]);break;}
     case'clear':
       if(!cart.length)break;
-      if(armed){const keep=JSON.parse(JSON.stringify(cart));cart=[];active={};fix=null;armed=false;b.textContent='Kosongkan';render();toast('Keranjang dikosongkan.',['Urungkan',()=>{cart=keep;render();}]);}
+      if(armed){const keep=JSON.parse(JSON.stringify(cart));cart=[];active={};fix=null;KRSEL='';armed=false;b.textContent='Kosongkan';render();toast('Keranjang dikosongkan.',['Urungkan',()=>{cart=keep;render();}]);}
       else{armed=true;b.textContent='Yakin?';setTimeout(()=>{armed=false;b.textContent='Kosongkan';},3000);}
       break;
     case'struk':
       if(!cart.length){toast('Keranjang masih kosong.');break;}
+      if(needKr())break;
       curS=struk();
       M(`<h3>Struk</h3><pre>${esc(curS)}</pre><div class="btns"><button class="pri" data-a="print">Cetak</button><button data-a="share">Share</button><button data-a="close">Tutup</button></div>`);
       break;
@@ -719,6 +740,7 @@ document.addEventListener('click',e=>{
     case'ppadd':{
       const asli=+$('pa').value||0;
       if(!asli){toast('Isi harga asli dulu.');break;}
+      if(!$('ppf').value){toast('Pilih platform yang digunakan dulu (Mitra Shopee, ShopeePay, atau Shopee).');break;}
       const i=+b.dataset.i;
       cart.push({id:++uid,t:'ppob',ty:PPOBID[i],n:$('pd').value.trim()||PPOB[i][0],asli,admin:+$('pm2').value||0,m:+$('pmod').value||0,pf:$('ppf').value,cat:$('pc').value.trim()});
       closeM();render();break;
@@ -731,6 +753,7 @@ document.addEventListener('change',e=>{
   if(a=='q'){l.q=Math.max(1,parseInt(e.target.value)||1);if(l.t=='svc'&&SVC[l.k][1]=='tier')active[l.k]=l.id;render();}
   else if(a=='kr'){l.kr=e.target.value;render();}
   else if(a=='lb'){l.lb=e.target.value;render();}
+  else if(a=='pf'){l.pf=e.target.value;render();}
 });
 document.addEventListener('input',e=>{
   const id=e.target.id;
