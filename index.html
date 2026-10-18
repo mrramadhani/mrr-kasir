@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3A2F63">
 <title>MRR Kasir</title>
 <style>
 *{box-sizing:border-box}
@@ -90,6 +91,8 @@ header{max-width:100%}
 header nav{flex-wrap:wrap}
 .kc{margin:0 0 10px}
 .kc.need button{border-color:var(--acc)}
+html,body,button,input,select{touch-action:manipulation}
+html,body{overscroll-behavior-y:contain}
 @media(max-width:700px){header{padding:8px 10px;gap:6px}header nav button{padding:4px 9px}.sw{width:20px;height:20px}}
 #pp{display:none}
 @media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
@@ -315,6 +318,7 @@ function render(){
   const cur={};let fl2=false;
   cart.forEach((l,i)=>{cur[l.id]=l.q;if(!(l.id in prevQ)||l.q>prevQ[l.id]){const e=$('lines').children[i];if(e){e.classList.add('fl');fl2=true;}}});
   prevQ=cur;if(fl2){try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}}
+  saveDraft();
   $('sum').innerHTML=(t.round?`<div class="r s"><span>Pembulatan</span><span>${num(t.round)}</span></div>`:'')+`<div class="r tot"><span>Total</span><b>${fmt(t.total)}</b></div><div class="r s"><span>Untung</span><span>${U(t.untung)}</span></div>`;
 }
 function M(h){$('modal').innerHTML='<div class="mb"><div class="box">'+h+'</div></div>';}
@@ -388,6 +392,7 @@ function applyTheme(){
   const r=document.documentElement;r.dataset.theme=TH.mode;r.dataset.pal=TH.pal;
   $('md').textContent=TH.mode=='dark'?'☀':'☾';
   document.querySelectorAll('.sw').forEach(x=>x.classList.toggle('on',x.dataset.v==TH.pal));
+  const mt=document.querySelector('meta[name=theme-color]');if(mt)mt.content=getComputedStyle(r).getPropertyValue('--pri').trim()||'#3A2F63';
   try{localStorage.setItem('mrr-th',JSON.stringify(TH));}catch(e){}
 }
 const hm=d=>`${p2(d.getDate())}/${p2(d.getMonth()+1)} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
@@ -437,7 +442,7 @@ async function loadAll(){
     try{const d=await api('boot',{days:HD});applyData(d.load);hist=rowsToNotas(d.hist);}
     catch(e){if(e.message!=='Aksi tidak dikenal')throw e;applyData(await api('load'));loadHist();}
     try{sessionStorage.setItem('mrr-pin',PIN);}catch(e){}
-    closeM();setSt('● Terhubung');render();
+    closeM();setSt('● Terhubung');loadDraft();render();
   }catch(e){
     try{sessionStorage.removeItem('mrr-pin');}catch(x){}
     PIN='';setSt('● Belum masuk');pinScreen(e.message);
@@ -670,6 +675,21 @@ function needKr(){
 function paperInfo(n){
   const a=n.cart.filter(l=>l.kr||l.pf).map(l=>`${esc(l.n)}: ${l.kr?(KN[l.kr]||l.kr):l.pf}`);
   return a.length?`<div class="s">${a.join('<br>')}</div>`:'';
+}
+function saveDraft(){
+  try{
+    if(cart.length)localStorage.setItem('mrr-draft',JSON.stringify({t:Date.now(),cart,active,uid,KRSEL,fix}));
+    else localStorage.removeItem('mrr-draft');
+  }catch(e){}
+}
+function loadDraft(){
+  try{
+    const d=JSON.parse(localStorage.getItem('mrr-draft')||'null');
+    if(d&&Date.now()-d.t<432e5&&d.cart&&d.cart.length&&!cart.length){
+      cart=d.cart;active=d.active||{};uid=Math.max(uid,d.uid||0);KRSEL=d.KRSEL||'';fix=d.fix||null;
+      toast('Keranjang yang belum dibayar dipulihkan.');
+    }
+  }catch(e){}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
