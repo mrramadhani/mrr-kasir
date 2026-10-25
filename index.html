@@ -109,6 +109,10 @@ header nav{flex-wrap:wrap}
 }
 html,body,button,input,select{touch-action:manipulation}
 html,body{overscroll-behavior-y:contain}
+.cart{display:flex;flex-direction:column;overflow:hidden;max-height:calc(100vh - 96px)}
+.cart #lines{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.cart h2,.cart #sum,.cart .btns{flex:none}
+@media(max-width:800px){.cart{max-height:46vh;overflow:hidden}}
 @media(max-width:700px){header{padding:8px 10px;gap:6px}header nav button{padding:4px 9px}.sw{width:20px;height:20px}}
 #pp{display:none}
 @media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
