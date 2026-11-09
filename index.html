@@ -203,7 +203,7 @@ main{max-width:1400px;margin:0 auto}
 </style>
 </head>
 <body>
-<header><div class="hb"><span class="lg">M</span><div><b>MRR Fotokopi, Print &amp; ATK</b> <span id="st" class="st">● Mode uji</span></div></div><div class="hb"><nav><button class="on" data-a="view" data-v="kasir">Kasir</button><button data-a="view" data-v="riwayat">Riwayat</button><button data-a="view" data-v="laporan">Laporan</button><button data-a="view" data-v="stok">Stok</button></nav><span class="hb"><button class="sw" data-a="pal" data-v="plum" style="background:#3A2F63" title="Plum"></button><button class="sw" data-a="pal" data-v="teal" style="background:#3E8574" title="Teal"></button><button class="sw" data-a="pal" data-v="terra" style="background:#D97D4A" title="Terakota"></button><button class="sw" data-a="pal" data-v="ocean" style="background:#1F5FA8" title="Biru"></button><button class="sw" data-a="pal" data-v="rose" style="background:#A5345C" title="Mawar"></button><button class="sw" data-a="pal" data-v="slate" style="background:#3B4A5A" title="Grafit"></button></span><button class="md" id="ey" data-a="eye" title="Tampilkan/sembunyikan untung">🙈</button><button class="md" id="md" data-a="mode" title="Ganti terang/gelap">☾</button></div></header>
+<header><div class="hb"><span class="lg">M</span><div><b>MRR Fotokopi, Print &amp; ATK</b> <span id="st" class="st">● Mode uji</span></div></div><div class="hb"><nav><button class="on" data-a="view" data-v="kasir">Kasir</button><button data-a="view" data-v="riwayat">Riwayat</button><button data-a="view" data-v="laporan">Laporan</button><button data-a="view" data-v="stok">Stok</button></nav><span class="hb"><button class="sw" data-a="pal" data-v="plum" style="background:#3A2F63" title="Plum"></button><button class="sw" data-a="pal" data-v="teal" style="background:#3E8574" title="Teal"></button><button class="sw" data-a="pal" data-v="terra" style="background:#D97D4A" title="Terakota"></button><button class="sw" data-a="pal" data-v="ocean" style="background:#1F5FA8" title="Biru"></button><button class="sw" data-a="pal" data-v="rose" style="background:#A5345C" title="Mawar"></button><button class="sw" data-a="pal" data-v="slate" style="background:#3B4A5A" title="Grafit"></button></span><button class="md" id="fp" data-a="fp" title="Masuk dengan sidik jari">🔒</button><button class="md" id="ey" data-a="eye" title="Tampilkan/sembunyikan untung">🙈</button><button class="md" id="md" data-a="mode" title="Ganti terang/gelap">☾</button></div></header>
 <main>
   <section>
     <div id="stat" class="stat" title="Ringkasan hari ini"></div>
@@ -454,8 +454,9 @@ function applyData(d){
   P={};d.pengaturan.forEach(r=>{if(r[0])P[String(r[0]).trim()]=r[1];});
 }
 function pinScreen(msg){
-  M(`<h3>Masuk</h3><p class="s">Masukkan PIN kasir.</p><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"><div class="s" style="color:var(--acc);margin-top:6px">${esc(msg||'')}</div><div class="btns"><button class="pri" data-a="login">Masuk</button></div>`);
+  M(`<h3>Masuk</h3><p class="s">Masukkan PIN kasir.</p><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"><div class="s" style="color:var(--acc);margin-top:6px">${esc(msg||'')}</div><div class="btns"><button class="pri" data-a="login">Masuk</button></div>${bioGet()&&bioOK()?'<div class="btns"><button data-a="biol">Masuk dengan sidik jari</button></div>':''}`);
   setTimeout(()=>{if($('pin'))$('pin').focus();},50);
+  if(bioGet()&&bioOK()&&!msg)setTimeout(bioLogin,300);
 }
 async function loadAll(){
   setSt('Memuat data…');
@@ -464,12 +465,15 @@ async function loadAll(){
     catch(e){if(e.message!=='Aksi tidak dikenal')throw e;applyData(await api('load'));loadHist();}
     try{sessionStorage.setItem('mrr-pin',PIN);}catch(e){}
     closeM();setSt('● Terhubung');loadDraft();render();
+    BIOLOGIN=false;if(bioOK()&&!bioGet())toast('Mau masuk pakai sidik jari?',['Aktifkan',bioEnable]);
   }catch(e){
     try{sessionStorage.removeItem('mrr-pin');}catch(x){}
-    PIN='';setSt('● Belum masuk');pinScreen(e.message);
+    if(BIOLOGIN&&e.message==='PIN salah')localStorage.removeItem('mrr-bio');
+    BIOLOGIN=false;PIN='';setSt('● Belum masuk');pinScreen(e.message);
   }
 }
 function boot(){
+  if(!bioOK())$('fp').style.display='none';
   let p='';try{p=sessionStorage.getItem('mrr-pin')||'';}catch(e){}
   if(!p){setSt('● Belum masuk');return pinScreen();}
   PIN=p;loadAll();
@@ -712,6 +716,31 @@ function loadDraft(){
     }
   }catch(e){}
 }
+let BIOLOGIN=false;
+const b64u={enc:b=>btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''),dec:t=>Uint8Array.from(atob(t.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))};
+const bioOK=()=>!!(window.PublicKeyCredential&&navigator.credentials&&window.crypto);
+function bioGet(){try{return JSON.parse(localStorage.getItem('mrr-bio')||'null');}catch(e){return null;}}
+async function bioEnable(){
+  if(!PIN){toast('Masuk dengan PIN dulu.');return;}
+  try{
+    const c=await navigator.credentials.create({publicKey:{
+      challenge:crypto.getRandomValues(new Uint8Array(32)),
+      rp:{name:'MRR Kasir'},
+      user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'kasir',displayName:'Kasir MRR'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required'},
+      timeout:60000,attestation:'none'}});
+    localStorage.setItem('mrr-bio',JSON.stringify({id:b64u.enc(c.rawId),p:btoa(PIN)}));
+    toast('Sidik jari aktif. Berikutnya cukup tempelkan jari saat masuk.');
+  }catch(e){toast('Sidik jari tidak jadi diaktifkan ('+(e.name||'galat')+').');}
+}
+async function bioLogin(){
+  const r=bioGet();if(!r)return;
+  try{
+    await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:b64u.dec(r.id)}],userVerification:'required',timeout:60000}});
+    BIOLOGIN=true;PIN=atob(r.p);loadAll();
+  }catch(e){}
+}
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
@@ -726,6 +755,10 @@ document.addEventListener('click',e=>{
     case'kt':kt=b.dataset.v;renderStok();break;
     case'kbuy':kBuy(b);break;
     case'kkor':kKor(b);break;
+    case'fp':M(`<h3>Masuk dengan sidik jari</h3><p class="s">Memakai sidik jari atau kunci layar HP-mu. Aplikasi tidak pernah menyimpan atau mengirim sidik jarimu; HP hanya memberi tahu "cocok" atau "tidak". Agar bisa masuk tanpa mengetik, PIN kasir disimpan di HP ini saja.</p><p class="s">Status: <b>${bioGet()?'aktif':'belum aktif'}</b></p><div class="btns">${bioGet()?'<button data-a="fpoff">Nonaktifkan</button>':'<button class="pri" data-a="fpon">Aktifkan</button>'}<button data-a="close">Tutup</button></div>`);break;
+    case'fpon':closeM();bioEnable();break;
+    case'fpoff':localStorage.removeItem('mrr-bio');closeM();toast('Sidik jari dinonaktifkan. PIN tersimpan sudah dihapus dari HP ini.');break;
+    case'biol':bioLogin();break;
     case'login':PIN=$('pin').value.trim();b.disabled=true;b.textContent='Memuat…';loadAll();break;
     case'view':setView(b.dataset.v);break;
     case'mode':TH.mode=TH.mode=='dark'?'light':'dark';applyTheme();break;
