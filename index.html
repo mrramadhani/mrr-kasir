@@ -113,6 +113,24 @@ html,body{overscroll-behavior-y:contain}
 .cart #lines{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain}
 .cart h2,.cart #sum,.cart .btns{flex:none}
 @media(max-width:800px){.cart{max-height:46vh;overflow:hidden}}
+.cbar{display:none}
+.sh{display:none}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+@media(max-width:700px){
+  .cart{display:none}
+  .cbar{display:flex;position:fixed;left:10px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:14;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 6px 24px rgba(0,0,0,.22)}
+  .cbl{flex:1;display:flex;align-items:center;gap:10px;text-align:left;border:0;background:transparent;padding:4px 6px}
+  .cbi{font-size:22px}
+  .cbl b{display:block;font-size:12px;color:var(--mute);font-weight:600}
+  .cbl small{display:block;font-size:20px;font-weight:800;color:var(--ink)}
+  .cbp{padding:12px 28px;font-size:16px;border-radius:12px}
+  body.hasbar{padding-bottom:140px}
+  body.hasbar #toast{bottom:calc(140px + env(safe-area-inset-bottom,0px))}
+  .sh{display:flex;position:fixed;inset:0;z-index:18;background:rgba(0,0,0,.45);align-items:flex-end}
+  .shb{background:var(--card);width:100%;max-height:78vh;border-radius:18px 18px 0 0;padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;animation:up .2s ease}
+  .shh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .shl{overflow-y:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain}
+}
 @media(max-width:700px){header{padding:8px 10px;gap:6px}header nav button{padding:4px 9px}.sw{width:20px;height:20px}}
 #pp{display:none}
 @media print{body>*:not(#pp){display:none!important}body{background:#fff!important;color:#000}#pp{display:block;font:11px/1.25 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin:0}@page{size:58mm auto;margin:2mm}}
@@ -255,7 +273,9 @@ main{max-width:1400px;margin:0 auto}
 <div class="ic"><h4>Omzet harian</h4><div class="lg2"><i class="s-Jasa"></i>Jasa<i class="s-Barang"></i>Barang<i class="s-PPOB"></i>PPOB<i class="s-Tip"></i>Tip<span id="lav" style="float:right"></span></div><div id="lch" class="chart"></div><div id="lti" class="s lti">Ketuk atau arahkan ke batang untuk melihat rincian.</div></div>
 <div class="ic"><h4>Barang terjual per item</h4><div class="lp"><select id="lk"></select><select id="ls"><option value="qty">Terbanyak terjual</option><option value="om">Omzet tertinggi</option><option value="un">Untung tertinggi</option></select></div><div id="ltb"></div></div>
 </div></section>
+<div id="sh" class="sh" hidden><div class="shb"><div class="shh"><b>Keranjang</b><button data-a="shx" aria-label="Tutup">✕</button></div><div id="shl" class="shl"></div><div id="shs"></div><div class="btns"><button data-a="clear">Kosongkan</button><button data-a="struk">Struk</button><button class="pri" data-a="pay">Bayar</button></div></div></div>
 <div id="modal"></div>
+<div id="cbar" class="cbar" hidden><button class="cbl" data-a="shopen" aria-label="Buka keranjang"><span class="cbi">🧾</span><span><b id="cbn">0 item</b><small id="cbt">Rp0</small></span></button><button class="pri cbp" data-a="pay">Bayar</button></div>
 <nav id="bn" aria-label="Menu utama"><button class="on" data-a="view" data-v="kasir"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg><span>Kasir</span></button><button data-a="view" data-v="riwayat"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Riwayat</span></button><button data-a="view" data-v="laporan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V10M12 20V4M19 20v-7"/></svg><span>Laporan</span></button><button data-a="view" data-v="stok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg><span>Stok</span></button></nav>
 <div id="toast"></div>
 <script>
@@ -341,6 +361,10 @@ function render(){
   prevQ=cur;if(fl2){try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}}
   saveDraft();
   $('sum').innerHTML=(t.round?`<div class="r s"><span>Pembulatan</span><span>${num(t.round)}</span></div>`:'')+`<div class="r tot"><span>Total</span><b>${fmt(t.total)}</b></div><div class="r s"><span>Untung</span><span>${U(t.untung)}</span></div>`;
+  {const t2=totals();$('shl').innerHTML=$('lines').innerHTML;$('shs').innerHTML=$('sum').innerHTML;
+  $('cbn').textContent=cart.length+' item';$('cbt').textContent=fmt(t2.total);
+  $('cbar').hidden=!cart.length;document.body.classList.toggle('hasbar',cart.length>0);
+  if(!cart.length)$('sh').hidden=true;}
 }
 function M(h){$('modal').innerHTML='<div class="mb"><div class="box">'+h+'</div></div>';}
 function closeM(){$('modal').innerHTML='';}
@@ -381,6 +405,7 @@ function updatePpob(e){
 function openPay(){
   if(!cart.length)return toast('Keranjang masih kosong.');
   if(needKr())return;
+  $('sh').hidden=true;
   pay={m:'Tunai',recv:0,tip:0,total:totals().total};
   M(`<h3>Pembayaran</h3><div class="big">${fmt(pay.total)}</div><div class="seg"><button class="on" data-a="pm" data-v="Tunai">Tunai</button><button data-a="pm" data-v="QRIS">QRIS</button></div><div id="cash"><label>Uang diterima</label><input id="recv" type="number" inputmode="numeric" placeholder="0"><div class="quick"><button data-a="qk" data-v="pas">Uang pas</button>${[5000,10000,20000,50000,100000].map(v=>`<button data-a="qk" data-v="${v}">${num(v)}</button>`).join('')}</div><div class="r"><span>Kembalian</span><b id="kmb">Rp0</b></div><button class="ghost" id="nt" data-a="notip">Tanpa kembalian (jadikan tip)</button><div class="r s"><span>Tip</span><span id="tip">Rp0</span></div></div><div class="btns"><button data-a="close">Batal</button><button class="pri" id="sv" data-a="save" disabled>Simpan</button></div>`);
 }
@@ -743,6 +768,7 @@ async function bioLogin(){
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
+  if(e.target.id==='sh'){$('sh').hidden=true;return;}
   if(e.target.classList&&e.target.classList.contains('mb')){if(!$('pin'))closeM();return;}
   const b=e.target.closest('[data-a]');
   if(!b||b.tagName=='INPUT'||b.tagName=='SELECT')return;
@@ -764,6 +790,8 @@ document.addEventListener('click',e=>{
     case'mode':TH.mode=TH.mode=='dark'?'light':'dark';applyTheme();break;
     case'eye':SU=!SU;if(view=='laporan')renderLap();$('ey').textContent=SU?'👁':'🙈';render();break;
     case'cmin':b.closest('.cart').classList.toggle('min');break;
+    case'shopen':if(cart.length)$('sh').hidden=false;break;
+    case'shx':$('sh').hidden=true;break;
     case'pal':TH.pal=b.dataset.v;applyTheme();break;
     case'nota':{
       const n=hist.find(x=>x.id==id);if(!n)break;
