@@ -301,7 +301,7 @@ const tierP=s=>{const t=TIER.find(x=>s>=x.a&&s<=x.b)||TIER[TIER.length-1];return
 function calc(l){
   if(l.t=='row')return{jual:l.jual,modal:l.modal};
   if(l.t=='item')return{jual:l.p*l.q,modal:l.m*l.q};
-  if(l.t=='ppob')return{jual:l.asli+l.admin,modal:l.m};
+  if(l.t=='ppob')return{jual:l.jl!=null?l.jl:l.asli+l.admin,modal:l.m};
   const [,tp,sisi,flat,toner]=SVC[l.k];
   const j=(tp=='tier'?tierP(l.q*sisi):flat*l.q)-(l.kr=='TANPA'?KJ*l.q:0);
   return{jual:Math.max(0,j),modal:l.q*(KER[l.kr]+sisi*toner)};
@@ -329,7 +329,7 @@ function addItem(i){
 }
 function lineH(l){
   const c=calc(l);
-  if(l.t=='ppob')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="r s"><span>${num(l.asli)} + admin ${num(l.admin)} · ${l.pf||'platform belum dipilih'}</span><span>untung ${U(c.jual-l.m)}</span></div>${l.cat?`<div class="s">${esc(l.cat)}</div>`:''}<div class="ctl"><select data-a="pf" data-id="${l.id}"><option value="">Pilih platform</option>${PF.map(v=>`<option${l.pf==v?' selected':''}>${v}</option>`).join('')}</select><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
+  if(l.t=='ppob')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="r s"><span>${num(l.asli)} + admin ${num(l.admin)}${(l.jl!=null&&l.jl!=l.asli+l.admin)?' (dibulatkan)':''} · ${l.pf||'platform belum dipilih'}</span><span>untung ${U(c.jual-l.m)}</span></div>${l.cat?`<div class="s">${esc(l.cat)}</div>`:''}<div class="ctl"><select data-a="pf" data-id="${l.id}"><option value="">Pilih platform</option>${PF.map(v=>`<option${l.pf==v?' selected':''}>${v}</option>`).join('')}</select><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
   if(l.t=='item')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
   const tier=SVC[l.k][1]=='tier';
   return`<div class="ln"><div class="r"><b>${SVC[l.k][0]}</b><span>${num(c.jual)}</span></div><div class="s">${l.q} lembar${tier&&active[l.k]==l.id?' · baris aktif':''}${l.kr=='TANPA'?' · tanpa kertas, potongan −'+num(KJ*l.q):''}</div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><select data-a="kr" data-id="${l.id}">${l.kr?'':'<option value="">Pilih kertas</option>'}${['A4','F4','TANPA'].map(v=>`<option value="${v}"${l.kr==v?' selected':''}>${v=='TANPA'?'Tanpa kertas (bawa sendiri)':v}</option>`).join('')}</select>${tier?`<input class="lb" placeholder="Label" value="${esc(l.lb)}" data-a="lb" data-id="${l.id}">`:''}<button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
@@ -391,7 +391,8 @@ function struk(){
   return L.join('\n');
 }
 function openPpob(i){
-  M(`<h3>${PPOB[i][0]}</h3><label>Detail</label><input id="pd" placeholder="mis. Dana 30.000"><label>Harga normal (sudah termasuk admin platform)</label><input id="pa" type="number" inputmode="numeric"><label>Biaya admin (keuntunganmu)</label><input id="pm2" type="number" inputmode="numeric" value="${PPOB[i][1]}"><div class="r" style="margin-top:8px"><span>Harga jual (pembeli)</span><b id="pj">Rp0</b></div><label>Modal (yang kamu bayar; ubah kalau ada promo)</label><input id="pmod" type="number" inputmode="numeric"><div class="r s"><span>Untung = admin + hemat promo</span><span id="pu">Rp0</span></div><label>Platform</label><select id="ppf"><option value="">Pilih platform…</option><option>Mitra Shopee</option><option>ShopeePay</option><option>Shopee</option></select><label>Catatan (mis. nomor token)</label><input id="pc"><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="ppadd" data-i="${i}">Tambah</button></div>`);
+  PPI=i;
+  M(`<h3>${PPOB[i][0]}</h3><label>Detail</label><input id="pd" placeholder="mis. Dana 30.000"><label>Harga normal (sudah termasuk admin platform)</label><input id="pa" type="number" inputmode="numeric"><label>Biaya admin (keuntunganmu)</label><input id="pm2" type="number" inputmode="numeric" value="${PPOB[i][1]}"><div class="r" style="margin-top:8px"><span>Harga jual (pembeli)${PPOB[i][2]=='terdekat'?' · dibulatkan Rp500':PPOB[i][2]=='naik'?' · dibulatkan naik Rp500':''}</span><b id="pj">Rp0</b></div><label>Modal (yang kamu bayar; ubah kalau ada promo)</label><input id="pmod" type="number" inputmode="numeric"><div class="r s"><span>Untung = admin + hemat promo</span><span id="pu">Rp0</span></div><label>Platform</label><select id="ppf"><option value="">Pilih platform…</option><option>Mitra Shopee</option><option>ShopeePay</option><option>Shopee</option></select><label>Catatan (mis. nomor token)</label><input id="pc"><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="ppadd" data-i="${i}">Tambah</button></div>`);
 }
 function updatePpob(e){
   const mo=$('pmod');
@@ -399,8 +400,9 @@ function updatePpob(e){
   const a=+$('pa').value||0,ad=+$('pm2').value||0;
   if(!mo.dataset.t)mo.value=a||'';
   const m=+mo.value||0;
-  $('pj').textContent=fmt(a+ad);
-  $('pu').textContent=SU?fmt(a+ad-m)+(a-m>0?` (admin ${num(ad)} + promo ${num(a-m)})`:''):'Rp•••';
+  const jl=rndP(a+ad,(PPOB[PPI]||[])[2]);
+  $('pj').textContent=fmt(jl);
+  $('pu').textContent=SU?fmt(jl-m)+(a-m>0?` (admin ${num(ad)} + promo ${num(a-m)})`:'')+(jl!=a+ad?` · pembulatan ${jl>a+ad?'+':'−'}${num(Math.abs(jl-a-ad))}`:''):'Rp•••';
 }
 function openPay(){
   if(!cart.length)return toast('Keranjang masih kosong.');
@@ -475,7 +477,7 @@ function applyData(d){
   Object.keys(SVC).forEach((k,i)=>{const r=A[i];if(r)SVC[k]=[SVC[k][0],String(r[6]).toLowerCase()=='tier'?'tier':'flat',n(r[7]),n(r[8]),n(r[9])];});
   RND=n(A[0][12])||500;
   const PP=A.filter(r=>r[14]);
-  PPOBID=PP.map(r=>r[14]);PPOB=PP.map(r=>[String(r[15]),n(r[16])]);
+  PPOBID=PP.map(r=>r[14]);PPOB=PP.map(r=>[String(r[15]),n(r[16]),String(r[17]||'').trim().toLowerCase()]);
   P={};d.pengaturan.forEach(r=>{if(r[0])P[String(r[0]).trim()]=r[1];});
 }
 function pinScreen(msg){
@@ -552,7 +554,7 @@ function restoreCart(n){
     if(r[2]!='Item')return;
     const id=String(r[3]),q=Number(r[6])||1,jual=Number(r[7])||0,modal=Number(r[8])||0;
     if(JREV[id])out.push({id:++uid,t:'svc',k:JREV[id],q,kr:KREV[r[14]]||'',lb:r[5]||''});
-    else if(id.indexOf('PPB')==0){const i=PPOBID.indexOf(id),ad=i>=0?PPOB[i][1]:0;out.push({id:++uid,t:'ppob',ty:id,n:r[4],asli:jual-ad,admin:ad,m:modal,pf:r[11]||'',cat:r[13]||''});}
+    else if(id.indexOf('PPB')==0){const i=PPOBID.indexOf(id),ad=i>=0?PPOB[i][1]:0;out.push({id:++uid,t:'ppob',ty:id,n:r[4],asli:jual-ad,admin:ad,jl:jual,m:modal,pf:r[11]||'',cat:r[13]||''});}
     else{const d=ITEMS.find(x=>x[0]==id);out.push(d?{id:++uid,t:'item',i:id,n:d[1],p:d[3],m:d[4],q}:{id:++uid,t:'item',i:id,n:r[4],p:jual/q,m:modal/q,q});}
   });
   return out;
@@ -766,6 +768,9 @@ async function bioLogin(){
     BIOLOGIN=true;PIN=atob(r.p);loadAll();
   }catch(e){}
 }
+let PPI=0;
+// terdekat: sisa >= 250 naik, < 250 turun | naik: selalu naik ke kelipatan 500 | selain itu: tanpa pembulatan
+const rndP=(v,mode)=>mode=='terdekat'?(v%500>=250?v-v%500+500:v-v%500):mode=='naik'?Math.ceil(v/500)*500:v;
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.id==='sh'){$('sh').hidden=true;return;}
@@ -844,7 +849,8 @@ document.addEventListener('click',e=>{
       if(!asli){toast('Isi harga asli dulu.');break;}
       if(!$('ppf').value){toast('Pilih platform yang digunakan dulu (Mitra Shopee, ShopeePay, atau Shopee).');break;}
       const i=+b.dataset.i;
-      cart.push({id:++uid,t:'ppob',ty:PPOBID[i],n:$('pd').value.trim()||PPOB[i][0],asli,admin:+$('pm2').value||0,m:+$('pmod').value||0,pf:$('ppf').value,cat:$('pc').value.trim()});
+      const admin=+$('pm2').value||0,jl=rndP(asli+admin,PPOB[i][2]);
+      cart.push({id:++uid,t:'ppob',ty:PPOBID[i],n:$('pd').value.trim()||PPOB[i][0],asli,admin,jl,m:+$('pmod').value||0,pf:$('ppf').value,cat:$('pc').value.trim()});
       closeM();render();break;
     }
   }
