@@ -329,7 +329,7 @@ function addItem(i){
 }
 function lineH(l){
   const c=calc(l);
-  if(l.t=='ppob')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="r s"><span>${num(l.asli)} + admin ${num(l.admin)}${(l.jl!=null&&l.jl!=l.asli+l.admin)?' (dibulatkan)':''} · ${l.pf||'platform belum dipilih'}</span><span>untung ${U(c.jual-l.m)}</span></div>${l.cat?`<div class="s">${esc(l.cat)}</div>`:''}<div class="ctl"><select data-a="pf" data-id="${l.id}"><option value="">Pilih platform</option>${PF.map(v=>`<option${l.pf==v?' selected':''}>${v}</option>`).join('')}</select><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
+  if(l.t=='ppob')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="r s"><span>${l.ty=='PPB-002'?'normal '+num(l.asli)+' → jual '+num(l.jl):num(l.asli)+' + admin '+num(l.admin)+((l.jl!=null&&l.jl!=l.asli+l.admin)?' (dibulatkan)':'')} · ${l.pf||'platform belum dipilih'}</span><span>untung ${U(c.jual-l.m)}</span></div>${l.cat?`<div class="s">${esc(l.cat)}</div>`:''}<div class="ctl"><select data-a="pf" data-id="${l.id}"><option value="">Pilih platform</option>${PF.map(v=>`<option${l.pf==v?' selected':''}>${v}</option>`).join('')}</select><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
   if(l.t=='item')return`<div class="ln"><div class="r"><b>${esc(l.n)}</b><span>${num(c.jual)}</span></div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
   const tier=SVC[l.k][1]=='tier';
   return`<div class="ln"><div class="r"><b>${SVC[l.k][0]}</b><span>${num(c.jual)}</span></div><div class="s">${l.q} lembar${tier&&active[l.k]==l.id?' · baris aktif':''}${l.kr=='TANPA'?' · tanpa kertas, potongan −'+num(KJ*l.q):''}</div><div class="ctl"><button data-a="dec" data-id="${l.id}">−</button><input class="q" type="number" min="1" value="${l.q}" data-a="q" data-id="${l.id}"><button data-a="inc" data-id="${l.id}">+</button><select data-a="kr" data-id="${l.id}">${l.kr?'':'<option value="">Pilih kertas</option>'}${['A4','F4','TANPA'].map(v=>`<option value="${v}"${l.kr==v?' selected':''}>${v=='TANPA'?'Tanpa kertas (bawa sendiri)':v}</option>`).join('')}</select>${tier?`<input class="lb" placeholder="Label" value="${esc(l.lb)}" data-a="lb" data-id="${l.id}">`:''}<button data-a="del" data-id="${l.id}">Hapus</button></div></div>`;
@@ -392,7 +392,7 @@ function struk(){
 }
 function openPpob(i){
   PPI=i;
-  M(`<h3>${PPOB[i][0]}</h3><label>Detail</label><input id="pd" placeholder="mis. Dana 30.000"><label>Harga normal (sudah termasuk admin platform)</label><input id="pa" type="number" inputmode="numeric"><label>Biaya admin (keuntunganmu)</label><input id="pm2" type="number" inputmode="numeric" value="${PPOB[i][1]}"><div class="r" style="margin-top:8px"><span>Harga jual (pembeli)${PPOB[i][2]=='terdekat'?' · dibulatkan Rp500':PPOB[i][2]=='naik'?' · dibulatkan naik Rp500':''}</span><b id="pj">Rp0</b></div><label>Modal (yang kamu bayar; ubah kalau ada promo)</label><input id="pmod" type="number" inputmode="numeric"><div class="r s"><span>Untung = admin + hemat promo</span><span id="pu">Rp0</span></div><label>Platform</label><select id="ppf"><option value="">Pilih platform…</option><option>Mitra Shopee</option><option>ShopeePay</option><option>Shopee</option></select><label>Catatan (mis. nomor token)</label><input id="pc"><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="ppadd" data-i="${i}">Tambah</button></div>`);
+  M(`<h3>${PPOB[i][0]}</h3><label>Detail</label><input id="pd" placeholder="mis. Dana 30.000">${PPOB[i][2]=='pulsa'?'<label>Nominal pulsa</label><input id="pn" type="number" inputmode="numeric" placeholder="mis. 20000">':''}<label>Harga normal (sudah termasuk admin platform)</label><input id="pa" type="number" inputmode="numeric"><label>Biaya admin (keuntunganmu)</label><input id="pm2" type="number" inputmode="numeric" value="${PPOB[i][1]}"><div class="r" style="margin-top:8px"><span>Harga jual (pembeli)${PPOB[i][2]=='terdekat'?' · dibulatkan Rp500':PPOB[i][2]=='naik'?' · dibulatkan naik Rp500':PPOB[i][2]=='pulsa'?' · otomatis, bisa diubah':''}</span>${PPOB[i][2]=='pulsa'?'<input id="pjv" type="number" inputmode="numeric" style="width:130px;text-align:right">':'<b id="pj">Rp0</b>'}</div><label>Modal (yang kamu bayar; ubah kalau ada promo)</label><input id="pmod" type="number" inputmode="numeric"><div class="r s"><span>Untung = admin + hemat promo</span><span id="pu">Rp0</span></div><label>Platform</label><select id="ppf"><option value="">Pilih platform…</option><option>Mitra Shopee</option><option>ShopeePay</option><option>Shopee</option></select><label>Catatan (mis. nomor token)</label><input id="pc"><div class="btns"><button data-a="close">Batal</button><button class="pri" data-a="ppadd" data-i="${i}">Tambah</button></div>`);
 }
 function updatePpob(e){
   const mo=$('pmod');
@@ -400,9 +400,12 @@ function updatePpob(e){
   const a=+$('pa').value||0,ad=+$('pm2').value||0;
   if(!mo.dataset.t)mo.value=a||'';
   const m=+mo.value||0;
-  const jl=rndP(a+ad,(PPOB[PPI]||[])[2]);
-  $('pj').textContent=fmt(jl);
-  $('pu').textContent=SU?fmt(jl-m)+(a-m>0?` (admin ${num(ad)} + promo ${num(a-m)})`:'')+(jl!=a+ad?` · pembulatan ${jl>a+ad?'+':'−'}${num(Math.abs(jl-a-ad))}`:''):'Rp•••';
+  const isP=(PPOB[PPI]||[])[2]=='pulsa';
+  if(e&&e.target.id=='pjv')$('pjv').dataset.t=1;
+  let jl;
+  if(isP){const pv=$('pjv'),auto=pulsaP(+$('pn').value||0,a,ad);if(!pv.dataset.t)pv.value=auto||'';jl=+pv.value||auto;}
+  else{jl=rndP(a+ad,(PPOB[PPI]||[])[2]);$('pj').textContent=fmt(jl);}
+  $('pu').textContent=SU?fmt(jl-m)+(a-m>0?` (admin ${num(ad)} + promo ${num(a-m)})`:'')+(!isP&&jl!=a+ad?` · pembulatan ${jl>a+ad?'+':'−'}${num(Math.abs(jl-a-ad))}`:''):'Rp•••';
 }
 function openPay(){
   if(!cart.length)return toast('Keranjang masih kosong.');
@@ -449,7 +452,7 @@ function strukOf(n,mark){const k=cart,a=SD,b=SM;cart=n.cart;SD=n.at;SM=mark;cons
 function renderHist(){
   const f=hq.trim().toLowerCase();
   const L=[...hist].reverse().filter(n=>!f||n.cart.some(l=>nm(l).toLowerCase().includes(f)));
-  $('hl').innerHTML=L.length?L.map(n=>`<div class="hn${n.st=='Void'?' vd':''}" data-a="nota" data-id="${n.id}"><div class="r"><b>${n.sid||'#'+n.id} · ${hm(n.at)}</b><b>${fmt(n.total)}</b></div><div class="s">${esc(n.cart.map(nm).join(', '))}</div><div class="s">${n.m}${n.tip?' · tip '+num(n.tip):''}${n.st=='Void'?' · VOID: '+esc(n.why):''}${n.rep?' · diganti nota #'+n.rep:''}</div></div>`).join(''):'<p class="empty">Belum ada nota. Simpan transaksi dari layar Kasir.</p>';
+  $('hl').innerHTML=pendHtml()+(L.length?L.map(n=>`<div class="hn${n.st=='Void'?' vd':''}" data-a="nota" data-id="${n.id}"><div class="r"><b>${n.sid||'#'+n.id} · ${hm(n.at)}</b><b>${fmt(n.total)}</b></div><div class="s">${esc(n.cart.map(nm).join(', '))}</div><div class="s">${n.m}${n.tip?' · tip '+num(n.tip):''}${n.st=='Void'?' · VOID: '+esc(n.why):''}${n.rep?' · diganti nota #'+n.rep:''}</div></div>`).join(''):'<p class="empty">Belum ada nota. Simpan transaksi dari layar Kasir.</p>');
 }
 function setView(v){
   view=v;document.querySelector('main').hidden=v!='kasir';$('hv').hidden=v!='riwayat';$('lv').hidden=v!='laporan';$('kv').hidden=v!='stok';
@@ -459,10 +462,13 @@ function setView(v){
 
 let PIN='';
 async function api(action,extra){
-  const r=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({action,pin:PIN},extra||{}))});
-  const d=await r.json();
-  if(!d.ok)throw new Error(d.error);
-  return d.data;
+  const ac=new AbortController(),tm=setTimeout(()=>ac.abort(),25000);
+  try{
+    const r=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({action,pin:PIN},extra||{})),signal:ac.signal});
+    const d=await r.json();
+    if(!d.ok){const er=new Error(d.error);er.srv=true;throw er;}
+    return d.data;
+  }finally{clearTimeout(tm);}
 }
 function applyData(d){
   const n=v=>Number(v)||0;
@@ -488,22 +494,23 @@ function pinScreen(msg){
 async function loadAll(){
   setSt('Memuat data…');
   try{
-    try{const d=await api('boot',{days:HD});applyData(d.load);hist=rowsToNotas(d.hist);}
+    try{const d=await api('boot',{days:HD});applyData(d.load);hist=rowsToNotas(d.hist);try{localStorage.setItem('mrr-cache',JSON.stringify(d.load));}catch(x){}}
     catch(e){if(e.message!=='Aksi tidak dikenal')throw e;applyData(await api('load'));loadHist();}
     try{sessionStorage.setItem('mrr-pin',PIN);}catch(e){}
-    closeM();setSt('● Terhubung');loadDraft();render();
+    closeM();OFF=false;setSt('● Terhubung');loadDraft();render();flushQ();qStatus();
     BIOLOGIN=false;if(bioOK()&&!bioGet())toast('Mau masuk pakai sidik jari?',['Aktifkan',bioEnable]);
   }catch(e){
-    try{sessionStorage.removeItem('mrr-pin');}catch(x){}
+    if(e.srv){try{sessionStorage.removeItem('mrr-pin');}catch(x){}}
+    if(!e.srv&&TRUST){const c=cacheGet();if(c){applyData(c);OFF=true;BIOLOGIN=false;closeM();setSt('⚠ Offline · memakai data tersimpan');loadDraft();render();qStatus();return;}}
     if(BIOLOGIN&&e.message==='PIN salah')localStorage.removeItem('mrr-bio');
-    BIOLOGIN=false;PIN='';setSt('● Belum masuk');pinScreen(e.message);
+    BIOLOGIN=false;PIN='';setSt('● Belum masuk');pinScreen(e.srv?e.message:'Tidak ada koneksi. Coba lagi saat ada sinyal.');
   }
 }
 function boot(){
   if(!bioOK())$('fp').style.display='none';
   let p='';try{p=sessionStorage.getItem('mrr-pin')||'';}catch(e){}
   if(!p){setSt('● Belum masuk');return pinScreen();}
-  PIN=p;loadAll();
+  PIN=p;TRUST=true;loadAll();
 }
 const JSA={fk:'JSA-001',fs:'JSA-002',bt:'JSA-003',bs:'JSA-004',pb:'JSA-005',pw:'JSA-006',ph:'JSA-007',ps:'JSA-008'};
 const KID={A4:'KRT-001',F4:'KRT-002',TANPA:'TANPA'};
@@ -517,9 +524,17 @@ async function save(){
   });
   if(t.round)rows.push({jenis:'Pembulatan',nama:'Pembulatan',qty:1,jual:t.round,modal:0});
   if(tip)rows.push({jenis:'Tip',nama:'Tip',qty:1,jual:tip,modal:0});
+  const item={key:newKey(),nota:{metode:pay.m,rows,replaces:fix},at:Date.now(),total:t.total,desc:cart.map(nm).join(', ')};
   $('sv').disabled=true;setSt('Menyimpan…');
-  try{await api('save',{nota:{metode:pay.m,rows,replaces:fix}});saveLocal();loadHist();}
-  catch(e){setSt('⚠ Gagal menyimpan');toast('Gagal menyimpan: '+e.message);$('sv').disabled=false;}
+  try{
+    if(OFF||navigator.onLine===false)throw new Error('offline');
+    await api('save',{nota:item.nota,key:item.key});saveLocal();loadHist();
+  }catch(e){
+    if(e.srv){setSt('⚠ Gagal menyimpan');toast('Gagal menyimpan: '+e.message);$('sv').disabled=false;return;}
+    OFF=true;qPush(item);saveLocal();
+    toast('Tidak ada sinyal. Nota disimpan di HP dan dikirim otomatis nanti.');
+    setTimeout(qStatus,800);
+  }
 }
 let HD=7;
 function rowsToNotas(rows){
@@ -543,7 +558,7 @@ function rowsToNotas(rows){
 async function loadHist(){
   refreshData();
   try{hist=rowsToNotas(await api('history',{days:HD}));}
-  catch(e){toast('Gagal memuat riwayat: '+e.message);}
+  catch(e){if(!OFF)toast('Gagal memuat riwayat: '+e.message);}
   if(view=='riwayat')renderHist();else render();
 }
 const JREV=Object.fromEntries(Object.entries(JSA).map(([k,v])=>[v,k]));
@@ -765,12 +780,53 @@ async function bioLogin(){
   const r=bioGet();if(!r)return;
   try{
     await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:b64u.dec(r.id)}],userVerification:'required',timeout:60000}});
-    BIOLOGIN=true;PIN=atob(r.p);loadAll();
+    BIOLOGIN=true;TRUST=true;PIN=atob(r.p);loadAll();
   }catch(e){}
 }
 let PPI=0;
 // terdekat: sisa >= 250 naik, < 250 turun | naik: selalu naik ke kelipatan 500 | selain itu: tanpa pembulatan
 const rndP=(v,mode)=>mode=='terdekat'?(v%500>=250?v-v%500+500:v-v%500):mode=='naik'?Math.ceil(v/500)*500:v;
+// pulsa: harga jual = yang lebih besar antara (nominal + admin) dan (harga normal dibulatkan naik ke Rp500)
+const pulsaP=(nom,norm,admin)=>Math.max(nom+admin,Math.ceil(norm/500)*500);
+/*Q-START*/
+let TRUST=false,OFF=false,QF=false;
+const cacheGet=()=>{try{return JSON.parse(localStorage.getItem('mrr-cache')||'null');}catch(e){return null;}};
+const qGet=()=>{try{return JSON.parse(localStorage.getItem('mrr-q')||'[]');}catch(e){return [];}};
+const qSet=a=>{try{localStorage.setItem('mrr-q',JSON.stringify(a));}catch(e){}};
+const newKey=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function qPush(it){const a=qGet();a.push(it);qSet(a);}
+function qStatus(){const n=qGet().length;if(n)setSt(`\u23f3 ${n} nota menunggu sinyal`);}
+const pendHtml=()=>qGet().map(q=>`<div class="hn" style="opacity:.8;cursor:default"><div class="r"><b>\u23f3 Menunggu sinyal \u00b7 ${hm(new Date(q.at))}</b><b>${fmt(q.total)}</b></div><div class="s">${esc(q.desc)}</div></div>`).join('');
+async function flushQ(){
+  if(QF||!PIN||OFF)return;
+  const a=qGet();if(!a.length)return;
+  QF=true;let sent=0;
+  try{
+    while(a.length){
+      try{await api('save',{nota:a[0].nota,key:a[0].key});a.shift();sent++;qSet(a);}
+      catch(e){
+        if(!e.srv)break;
+        if(e.message==='PIN salah'){PIN='';try{sessionStorage.removeItem('mrr-pin');}catch(x){}pinScreen('PIN salah. Masuk lagi untuk mengirim nota tertunda.');break;}
+        const bad=a.shift();qSet(a);
+        try{const f=JSON.parse(localStorage.getItem('mrr-qf')||'[]');f.push(bad);localStorage.setItem('mrr-qf',JSON.stringify(f));}catch(x){}
+        toast('Satu nota tertunda ditolak server: '+e.message);
+      }
+    }
+  }finally{QF=false;}
+  if(sent){toast(sent+' nota tertunda sudah terkirim.');loadHist();}
+  if(qGet().length)qStatus();else if(sent)setSt('\u2713 Semua nota terkirim');
+}
+async function recover(){
+  try{
+    const d=await api('boot',{days:HD});
+    applyData(d.load);hist=rowsToNotas(d.hist);
+    try{localStorage.setItem('mrr-cache',JSON.stringify(d.load));}catch(x){}
+    OFF=false;setSt('\u25cf Terhubung');render();flushQ();
+  }catch(e){}
+}
+/*Q-END*/
+window.addEventListener('online',()=>{if(!PIN)return;if(OFF)recover();else flushQ();});
+setInterval(()=>{if(!PIN)return;if(OFF&&navigator.onLine!==false)recover();else flushQ();},30000);
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement&&document.activeElement.id==='pin'){PIN=$('pin').value.trim();loadAll();}});
 document.addEventListener('click',e=>{
   if(e.target.id==='sh'){$('sh').hidden=true;return;}
@@ -849,8 +905,8 @@ document.addEventListener('click',e=>{
       if(!asli){toast('Isi harga asli dulu.');break;}
       if(!$('ppf').value){toast('Pilih platform yang digunakan dulu (Mitra Shopee, ShopeePay, atau Shopee).');break;}
       const i=+b.dataset.i;
-      const admin=+$('pm2').value||0,jl=rndP(asli+admin,PPOB[i][2]);
-      cart.push({id:++uid,t:'ppob',ty:PPOBID[i],n:$('pd').value.trim()||PPOB[i][0],asli,admin,jl,m:+$('pmod').value||0,pf:$('ppf').value,cat:$('pc').value.trim()});
+      const admin=+$('pm2').value||0,jl=PPOB[i][2]=='pulsa'?(+$('pjv').value||pulsaP(+$('pn').value||0,asli,admin)):rndP(asli+admin,PPOB[i][2]);
+      cart.push({id:++uid,t:'ppob',ty:PPOBID[i],n:$('pd').value.trim()||(PPOB[i][2]=='pulsa'&&+$('pn').value?'Pulsa '+num(+$('pn').value):PPOB[i][0]),asli,admin,jl,m:+$('pmod').value||0,pf:$('ppf').value,cat:$('pc').value.trim()});
       closeM();render();break;
     }
   }
@@ -868,7 +924,7 @@ document.addEventListener('input',e=>{
   if(id=='q')render();
   else if(id=='hs'){hq=e.target.value;renderHist();}
   else if(id=='recv'){pay.recv=+e.target.value||0;pay.tip=0;updatePay();}
-  else if(id=='pa'||id=='pm2'||id=='pmod')updatePpob(e);
+  else if(id=='pa'||id=='pm2'||id=='pmod'||id=='pn'||id=='pjv')updatePpob(e);
 });
 applyTheme();boot();
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
